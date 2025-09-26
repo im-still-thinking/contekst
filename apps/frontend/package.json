@@ -1,0 +1,10 @@
+{
+  "name": "@contekst/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Frontend dev server not configured yet'",
+    "build": "echo 'Frontend build not configured yet'",
+    "clean": "rm -rf dist node_modules/.cache"
+  }
+}

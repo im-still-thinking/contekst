@@ -1,0 +1,11 @@
+{
+  "name": "@contekst/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Backend dev server not configured yet'",
+    "build": "echo 'Backend build not configured yet'",
+    "clean": "rm -rf dist node_modules/.cache"
+  }
+}

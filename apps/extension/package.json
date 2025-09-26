@@ -1,0 +1,10 @@
+{
+  "name": "@contekst/extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Extension dev not configured yet'",
+    "build": "echo 'Extension build not configured yet'",
+    "clean": "rm -rf dist node_modules/.cache"
+  }
+}
