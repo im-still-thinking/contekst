@@ -19,9 +19,6 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-// Backend API configuration
-const API_BASE_URL = 'http://localhost:3000';
-
 // Function to find the ChatGPT input field
 function findChatGPTInput(): HTMLElement | null {
   // Common selectors for ChatGPT input field (these may change over time)
@@ -173,6 +170,9 @@ function setInputValue(inputElement: HTMLElement, text: string): void {
     }
   }
 }
+
+// Backend API configuration
+const API_BASE_URL = 'http://localhost:3000';
 
 // Function to save prompt to backend
 async function savePromptToBackend(prompt: string): Promise<void> {
@@ -361,6 +361,56 @@ function setupEnterKeyInterception(): void {
   }
 }
 
+// Function to trigger ChatGPT's send functionality
+function triggerSendMessage(): void {
+  console.log('Triggering send message...');
+  
+  // Method 1: Find and click the visible send button
+  const sendButtonSelectors = [
+    'button[data-testid="send-button"]',
+    'button[aria-label*="Send"]',
+    'button[type="submit"]'
+  ];
+  
+  for (const selector of sendButtonSelectors) {
+    const button = document.querySelector(selector) as HTMLButtonElement;
+    if (button && button.id !== 'chatgpt-context-btn' && button.offsetWidth > 0) {
+      console.log('Found send button, clicking it:', button);
+      try {
+        button.click();
+        return;
+      } catch (error) {
+        console.log('Error clicking send button:', error);
+      }
+    }
+  }
+  
+  // Method 2: Trigger Enter key press on the input (fallback)
+  const inputElement = findChatGPTInput();
+  if (inputElement) {
+    console.log('Triggering Enter key press on input');
+    
+    // Focus the input first
+    inputElement.focus();
+    
+    // Create a more realistic Enter key event
+    const enterEvent = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    });
+    
+    inputElement.dispatchEvent(enterEvent);
+    return;
+  }
+  
+  console.log('All send trigger methods failed');
+}
+
 // Function to create and inject the "Add Context" button alongside the send button
 function injectButton() {
   const inputElement = findChatGPTInput();
@@ -451,7 +501,7 @@ function injectButton() {
     showLoadingState(inputElement);
     
     try {
-      // Fetch context from API
+      // Fetch context from API (simulated)
       const enhancedText = await fetchContextFromAPI(inputValue);
       
       // Hide loading state
