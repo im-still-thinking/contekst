@@ -15,7 +15,9 @@
     "build": "bun run --filter '*' build",
     "clean": "bun run --filter '*' clean",
     "dev:extension": "bun run -F @contekst/extension dev",
-    "build:extension": "bun run -F @contekst/extension build"
+    "build:extension": "bun run -F @contekst/extension build",
+    "dev:frontend": "bun run -F @contekst/frontend dev",
+    "build:frontend": "bun run -F @contekst/frontend build"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.5",
