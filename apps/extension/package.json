@@ -6,5 +6,8 @@
     "dev": "echo 'Extension dev not configured yet'",
     "build": "echo 'Extension build not configured yet'",
     "clean": "rm -rf dist node_modules/.cache"
+  },
+  "dependencies": {
+    "zod": "^4.1.11"
   }
 }

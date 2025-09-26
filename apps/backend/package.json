@@ -7,5 +7,8 @@
     "dev": "echo 'Backend dev server not configured yet'",
     "build": "echo 'Backend build not configured yet'",
     "clean": "rm -rf dist node_modules/.cache"
+  },
+  "dependencies": {
+    "zod": "^4.1.11"
   }
 }
