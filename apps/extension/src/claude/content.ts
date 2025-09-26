@@ -897,6 +897,38 @@ function setupContinuousMonitoring() {
   let lastInputParent: Element | null = null;
   let lastInputElement: HTMLElement | null = null;
   
+  // Debounce mechanism to prevent excessive button recreation
+  let repositionTimeout: number | undefined;
+  let lastRepositionTime = 0;
+  
+  // Debounced repositioning function to prevent flickering
+  const debouncedReposition = (reason: string) => {
+    const now = Date.now();
+    const timeSinceLastReposition = now - lastRepositionTime;
+    
+    // Don't reposition more than once every 2 seconds
+    if (timeSinceLastReposition < 2000) {
+      console.log(`Skipping reposition due to debounce (${reason})`);
+      return;
+    }
+    
+    if (repositionTimeout) {
+      clearTimeout(repositionTimeout);
+    }
+    
+    repositionTimeout = window.setTimeout(() => {
+      console.log(`Debounced reposition triggered: ${reason}`);
+      const existingButton = document.getElementById('claude-context-btn');
+      if (existingButton) {
+        existingButton.remove();
+      }
+      setTimeout(() => {
+        injectButton();
+        lastRepositionTime = Date.now();
+      }, 100);
+    }, 500); // Wait 500ms before repositioning
+  };
+  
   // Monitor for our button disappearing and new send buttons appearing
   const buttonObserver = new MutationObserver((mutations) => {
     let shouldReinject = false;
@@ -928,17 +960,34 @@ function setupContinuousMonitoring() {
                                Math.abs(currentRect.left - lastInputRect.left) > 30;
         const parentChanged = currentParent !== lastInputParent;
         
-        if (positionChanged || parentChanged || inputChanged) {
-          console.log('Input field changed, repositioning button...', {
+        // Additional check: if only the height changed (likely due to content changes), 
+        // don't reposition unless the change is very significant
+        const heightChanged = Math.abs(currentRect.height - lastInputRect.height) > 50;
+        const widthChanged = Math.abs(currentRect.width - lastInputRect.width) > 30;
+        
+        if (positionChanged || parentChanged || inputChanged || widthChanged) {
+          console.log('Input field changed, scheduling reposition...', {
             positionChanged,
             parentChanged,
             inputChanged,
+            heightChanged,
+            widthChanged,
             oldTop: lastInputRect.top,
             newTop: currentRect.top,
             oldLeft: lastInputRect.left,
-            newLeft: currentRect.left
+            newLeft: currentRect.left,
+            oldHeight: lastInputRect.height,
+            newHeight: currentRect.height
           });
-          shouldReinject = true;
+          debouncedReposition('input field changed');
+        } else if (heightChanged) {
+          // Only reposition for height changes if it's very significant (likely layout change, not content)
+          console.log('Significant height change detected, checking if repositioning needed...', {
+            oldHeight: lastInputRect.height,
+            newHeight: currentRect.height,
+            heightDiff: Math.abs(currentRect.height - lastInputRect.height)
+          });
+          // For now, don't reposition for height changes alone - they're usually just content changes
         }
       }
       
@@ -952,13 +1001,13 @@ function setupContinuousMonitoring() {
         const verticalDistance = Math.abs(buttonRect.top - inputRect.top);
         
         if (horizontalDistance > 200 || verticalDistance > 100) {
-          console.log('Button is mispositioned relative to input, repositioning...', {
+          console.log('Button is mispositioned relative to input, scheduling reposition...', {
             buttonPos: { top: buttonRect.top, left: buttonRect.left },
             inputPos: { top: inputRect.top, left: inputRect.left, right: inputRect.right },
             horizontalDistance,
             verticalDistance
           });
-          shouldReinject = true;
+          debouncedReposition('button mispositioned');
         }
       }
       
@@ -976,8 +1025,19 @@ function setupContinuousMonitoring() {
         for (const node of Array.from(mutation.addedNodes)) {
           if (node.nodeType === 1) {
             const element = node as Element;
+            
+            // Skip if this is just content being added to ProseMirror (like <p> tags from Shift+Enter)
+            if (element.tagName === 'P' || element.tagName === 'BR' || element.tagName === 'SPAN') {
+              // These are normal content additions to ProseMirror, not significant layout changes
+              continue;
+            }
+            
             // Look for elements that might contain or affect the input area
-            if (element.querySelector && (
+            // But exclude direct children of ProseMirror editor (which are just content)
+            const isProseMirrorChild = element.closest('.ProseMirror') && 
+                                     element.closest('.ProseMirror') !== element;
+            
+            if (!isProseMirrorChild && element.querySelector && (
               element.querySelector('div[contenteditable="true"]') ||
               element.querySelector('[class*="input"]') ||
               element.querySelector('[class*="composer"]') ||
@@ -1012,26 +1072,38 @@ function setupContinuousMonitoring() {
       console.log('Significant DOM change detected, checking button positioning...');
       // Small delay to let DOM settle
       setTimeout(() => {
-        if (!document.getElementById('claude-context-btn')) {
+        const button = document.getElementById('claude-context-btn');
+        const currentInput = findClaudeInput();
+        
+        if (!button) {
           console.log('Button missing after DOM change, reinitializing...');
           injectButton();
+        } else if (currentInput) {
+          // Additional check: only reposition if button is actually mispositioned
+          const buttonRect = button.getBoundingClientRect();
+          const inputRect = currentInput.getBoundingClientRect();
+          
+          const horizontalDistance = Math.abs(buttonRect.left - inputRect.right);
+          const verticalDistance = Math.abs(buttonRect.top - inputRect.top);
+          
+          // Only reposition if button is significantly mispositioned
+          if (horizontalDistance > 200 || verticalDistance > 100) {
+            console.log('Button mispositioned after DOM change, scheduling reposition...', {
+              horizontalDistance,
+              verticalDistance
+            });
+            debouncedReposition('DOM change mispositioned button');
+          } else {
+            console.log('Button still properly positioned after DOM change, keeping it');
+          }
         }
       }, 300);
     }
     
-    if (shouldReinject) {
-      // Remove existing button if it exists but is mispositioned
-      if (existingButton) {
-        try {
-          existingButton.remove();
-        } catch (error) {
-          console.log('Error removing existing button:', error);
-        }
-      }
-      
-      // Small delay to let DOM settle before reinitializing
+    // Only handle immediate reinjection if button is completely missing
+    if (!existingButton && currentInput) {
+      console.log('Button completely missing, immediate reinjection needed');
       setTimeout(() => {
-        console.log('Attempting to reinject button...');
         injectButton();
       }, 200);
     }
@@ -1083,14 +1155,13 @@ function setupContinuousMonitoring() {
         const verticalDistance = Math.abs(buttonRect.top - inputRect.top);
         
         if (horizontalDistance > 300 || verticalDistance > 150) {
-          console.log('Periodic check: Button mispositioned, repositioning...', {
+          console.log('Periodic check: Button mispositioned, scheduling reposition...', {
             horizontalDistance,
             verticalDistance,
             buttonPos: { top: buttonRect.top, left: buttonRect.left },
             inputPos: { top: inputRect.top, left: inputRect.left, right: inputRect.right }
           });
-          existingButton.remove();
-          setTimeout(() => injectButton(), 100);
+          debouncedReposition('periodic check mispositioned');
         }
       }
     }
