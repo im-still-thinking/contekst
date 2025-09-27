@@ -1,35 +1,32 @@
-# Use the official Bun image
-FROM oven/bun:1.1.34-alpine as base
+# Simple Dockerfile for Contekst Backend
+FROM oven/bun:1.1.34-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better caching
 COPY package.json bun.lockb* ./
 
 # Install dependencies
 RUN bun install --frozen-lockfile --production
 
 # Copy source code
-COPY . .
+COPY src/ ./src/
+COPY drizzle.config.ts ./
 
-# Build the application
-RUN bun run build
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S contekst -u 1001 && \
+    chown -R contekst:nodejs /app
 
-# Create a non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S contekst -u 1001
-
-# Change ownership of the app directory
-RUN chown -R contekst:nodejs /app
 USER contekst
 
-# Expose the port
+# Expose port
 EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun --version || exit 1
+  CMD curl -f http://localhost:3000/ || exit 1
 
 # Start the application
-CMD ["bun", "start"]
+CMD ["bun", "src/index.ts"]
