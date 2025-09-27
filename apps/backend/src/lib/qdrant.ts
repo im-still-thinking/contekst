@@ -75,24 +75,45 @@ export async function storeEmbedding(
   return qdrantId
 }
 
-// export async function searchSimilarMemories(
-//   embedding: number[],
-//   walletId: string,
-//   limit: number = 5
-// ) {
-//   const response = await client.search(COLLECTION_NAME, {
-//     vector: embedding,
-//     limit,
-//     filter: {
-//       must: [
-//         {
-//           key: 'walletId',
-//           match: { value: walletId }
-//         }
-//       ]
-//     },
-//     with_payload: true
-//   })
+export async function searchSimilarMemories(
+  embedding: number[],
+  walletId: string,
+  source?: string,
+  limit: number = 5
+) {
+  if (!client) {
+    console.warn('⚠️  Qdrant client not available - returning empty results')
+    return []
+  }
 
-//   return response
-// }
+  const filters: any[] = [
+    {
+      key: 'walletId',
+      match: { value: walletId }
+    }
+  ]
+
+  // Add source filter if specified
+  if (source) {
+    filters.push({
+      key: 'source',
+      match: { value: source }
+    })
+  }
+
+  try {
+    const response = await client.search(COLLECTION_NAME, {
+      vector: embedding,
+      limit,
+      filter: {
+        must: filters
+      },
+      with_payload: true
+    })
+
+    return response
+  } catch (error) {
+    console.error('Qdrant search failed:', error)
+    return []
+  }
+}

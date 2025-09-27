@@ -1,9 +1,10 @@
 import { nanoid } from 'nanoid'
 import { keccak256 } from 'js-sha3'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from './db'
 import { memories, memoryEmbeddings, memoryImages } from '../models/memory'
 import { extractMemoryFromPrompt, generateMemoryTags, generateEmbedding, generateImageSummary } from '../lib/ai'
-import { storeEmbedding, type MemoryMetadata } from '../lib/qdrant'
+import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../lib/qdrant'
 import { setJobStatus } from '../lib/redis'
 
 interface ImageData {
@@ -155,13 +156,104 @@ export async function processMemory(request: ProcessMemoryRequest): Promise<Proc
   return { success: true, jobId }
 }
 
-// export async function getMemoryById(memoryId: string) {
-//   const memory = await db.query.memories.findFirst({
-//     where: (memories, { eq }) => eq(memories.id, memoryId),
-//     with: {
-//       // We'll need to add relations later
-//     }
-//   })
-  
-//   return memory
-// }
+export async function retrieveRelevantMemories(
+  userPrompt: string,
+  userId: string,
+  source?: string,
+  conversationThread?: string,
+  limit: number = 5
+) {
+  try {
+    // Generate embedding for the user prompt
+    const promptEmbedding = await generateEmbedding(userPrompt)
+    
+    // Search for similar memories in Qdrant
+    const searchResults = await searchSimilarMemories(
+      promptEmbedding,
+      userId,
+      source,
+      limit
+    )
+    
+    if (searchResults.length === 0) {
+      return []
+    }
+    
+    // Extract Qdrant IDs from search results
+    const qdrantIds = searchResults.map((result: any) => String(result.id))
+    
+    // Get the corresponding memory IDs from our mapping table
+    const embeddingMappings = await db.select({
+      memoryId: memoryEmbeddings.memoryId,
+      qdrantId: memoryEmbeddings.qdrantId
+    })
+    .from(memoryEmbeddings)
+    .where(inArray(memoryEmbeddings.qdrantId, qdrantIds))
+    
+    const memoryIds = embeddingMappings.map(mapping => mapping.memoryId)
+    
+    if (memoryIds.length === 0) {
+      return []
+    }
+    
+    // Retrieve the actual memories with their images
+    const retrievedMemories = await db.select({
+      id: memories.id,
+      prompt: memories.prompt,
+      source: memories.source,
+      conversationThread: memories.conversationThread,
+      extractedMemory: memories.extractedMemory,
+      tags: memories.tags,
+      createdAt: memories.createdAt,
+      // Join with images
+      imageId: memoryImages.id,
+      imageIdentifier: memoryImages.identifier,
+      imageSummary: memoryImages.summary,
+    })
+    .from(memories)
+    .leftJoin(memoryImages, eq(memories.id, memoryImages.memoryId))
+    .where(inArray(memories.id, memoryIds))
+    
+    // Group memories with their images and add similarity scores
+    const memoryMap = new Map()
+    
+    for (const row of retrievedMemories) {
+      if (!memoryMap.has(row.id)) {
+        // Find the similarity score for this memory
+        const qdrantMapping = embeddingMappings.find(m => m.memoryId === row.id)
+        const searchResult = searchResults.find((r: any) => String(r.id) === qdrantMapping?.qdrantId)
+        
+        memoryMap.set(row.id, {
+          id: row.id,
+          prompt: row.prompt,
+          source: row.source,
+          conversationThread: row.conversationThread,
+          extractedMemory: row.extractedMemory,
+          tags: row.tags,
+          createdAt: row.createdAt,
+          similarity: searchResult?.score || 0,
+          images: []
+        })
+      }
+      
+      // Add image if present
+      if (row.imageId) {
+        memoryMap.get(row.id).images.push({
+          id: row.imageId,
+          identifier: row.imageIdentifier,
+          summary: row.imageSummary
+        })
+      }
+    }
+    
+    // Convert to array and sort by similarity score (highest first)
+    const result = Array.from(memoryMap.values())
+      .sort((a, b) => b.similarity - a.similarity)
+    
+    return result
+    
+  } catch (error) {
+    console.error('Memory retrieval failed:', error)
+    throw error
+  }
+}
