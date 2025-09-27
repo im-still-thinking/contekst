@@ -54,16 +54,17 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
 
     // Retrieve relevant memories
     .post('/retrieve', async ({ body }) => {
-        const { userId, userPrompt, source, conversationThread, limit } = body
+        const { userId, userPrompt, entity, source, conversationThread, limit } = body
 
-        if (!userId || !userPrompt) {
-            return { error: 'Missing required fields: userId, userPrompt' }
+        if (!userId || !userPrompt || !entity) {
+            return { error: 'Missing required fields: userId, userPrompt, entity' }
         }
 
         try {
             const memories = await retrieveRelevantMemories(
                 userPrompt,
                 userId,
+                entity,
                 source,
                 conversationThread,
                 limit || 5
@@ -85,7 +86,8 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
         body: t.Object({
             userId: t.String(),
             userPrompt: t.String(),
-            source: t.Optional(t.String()), // Access specifier: if provided, only memories from this source
+            entity: t.String({ description: 'Entity making the request (claude, chatgpt, etc.)' }),
+            source: t.Optional(t.String()), // Optional: filter to specific source
             conversationThread: t.Optional(t.String()),
             limit: t.Optional(t.Number({ minimum: 1, maximum: 20 }))
         })

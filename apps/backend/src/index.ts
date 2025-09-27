@@ -2,6 +2,8 @@ import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { authRoutes } from './routes/auth'
 import { memoryRoutes } from './routes/memory'
+import { leaseRoutes } from './routes/lease'
+import { auditRoutes } from './routes/audit'
 import { config } from './lib/config'
 import { initializeCollection } from './lib/qdrant'
 
@@ -18,6 +20,8 @@ const app = new Elysia()
       app
         .use(authRoutes)
         .use(memoryRoutes)
+        .use(leaseRoutes)
+        .use(auditRoutes)
     )
     .get('/', () => 'Contekst Super Memory Backend API 🧠')
     .listen(config.PORT)
