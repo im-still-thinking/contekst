@@ -44,8 +44,7 @@ export const memoryImages = mysqlTable(
     id: varchar('id', { length: 256 }).primaryKey(),
     memoryId: varchar('memory_id', { length: 256 }).notNull().references(() => memories.id, { onDelete: 'cascade' }),
     userId: varchar('user_id', { length: 256 }).notNull().references(() => users.walletId),
-    identifier: varchar('identifier', { length: 256 }).notNull(), // Walrus blobId
-    base64: text('base64').notNull(), // Store base64 for processing
+    identifier: varchar('identifier', { length: 256 }).notNull(), // Walrus blobId - only store this, not base64
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [

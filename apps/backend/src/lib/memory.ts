@@ -9,6 +9,7 @@ import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
 import { uploadImageToWalrus } from './walrus'
+import { addMemoryToBlockchain, isMemoryOnBlockchain } from './blockchain'
 import { config } from './config'
 
 interface ImageData {
@@ -89,7 +90,7 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       generateEmbedding(extractedMemory)
     ])
 
-    const memoryId = nanoid()
+    const memoryId = Date.now().toString() // Use timestamp as integer ID
 
     // Create blockchain fingerprint from all the data
     const blockchainFingerprint = createBlockchainFingerprint({
@@ -101,7 +102,34 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       imageIdentifiers: uploadedImages.map(img => img.identifier)
     })
 
-    // Store memory in database
+    await setJobStatus(jobId, 'processing', { step: 'recording_on_blockchain' })
+    
+    const blockchainTxHash = await addMemoryToBlockchain({
+      metadataHash: blockchainFingerprint,
+      sourceDomainName: source // Using source as domain name (e.g., "chatgpt.com", "claude.ai")
+    })
+    
+    if (!blockchainTxHash) {
+      console.error(`❌ Failed to record memory on blockchain for ${memoryId}`)
+      throw new Error('Blockchain storage failed - memory not saved')
+    }
+    
+    console.log(`✅ Memory recorded on blockchain: ${blockchainTxHash}`)
+    
+    // STEP 2: Verify memory exists on blockchain using the fingerprint
+    await setJobStatus(jobId, 'processing', { step: 'verifying_blockchain_storage' })
+    
+    const isOnBlockchain = await isMemoryOnBlockchain(blockchainFingerprint)
+    if (!isOnBlockchain) {
+      console.error(`❌ Memory verification failed on blockchain for fingerprint: ${blockchainFingerprint}`)
+      throw new Error('Blockchain verification failed - memory not found on chain')
+    }
+    
+    console.log(`✅ Memory verified on blockchain: ${blockchainFingerprint}`)
+
+    // STEP 3: Store memory in database ONLY after blockchain success
+    await setJobStatus(jobId, 'processing', { step: 'storing_in_database' })
+    
     await db.insert(memories).values({
       id: memoryId,
       userId,
@@ -110,44 +138,41 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       conversationThread,
       extractedMemory,
       tags,
-      blockchainFingerprint
+      blockchainFingerprint // Now guaranteed to be on blockchain
     })
 
     // Store image references if provided
     if (uploadedImages.length > 0) {
-      await setJobStatus(jobId, 'processing', { step: 'storing_image_references' })
-      
       const imageRecords = uploadedImages.map((image) => ({
         id: nanoid(),
         memoryId,
         userId,
-        identifier: image.identifier, // This is now the Walrus blobId
-        base64: image.base64, // Keep for AI processing/caching
+        identifier: image.identifier,
       }))
 
       await db.insert(memoryImages).values(imageRecords)
     }
 
     // Store embedding in Qdrant
-    const metadata: MemoryMetadata = {
-      memoryId,
-      walletId: userId, // Keep walletId for Qdrant metadata
-      source,
-      tags,
-      conversationThread,
-      timestamp: Date.now()
+    const success = await storeEmbedding(memoryId, extractedMemory, tags, embedding)
+    if (!success) {
+      console.error(`❌ Job ${jobId}: Failed to store embedding`)
+      await setJobStatus(jobId, 'failed', { error: 'Failed to store embedding in Qdrant' })
+      return
     }
-    const qdrantId = await storeEmbedding(embedding, metadata)
 
-    // Store embedding mapping
+    // Store embedding mapping 
     await db.insert(memoryEmbeddings).values({
       id: nanoid(),
       memoryId,
       userId,
-      qdrantId
+      qdrantId: memoryId
     })
 
-    await setJobStatus(jobId, 'completed', { memoryId })
+    await setJobStatus(jobId, 'completed', { 
+      memoryId,
+      blockchainTxHash: blockchainTxHash || null
+    })
     console.log(`✅ Job ${jobId} completed: ${memoryId}`)
   } catch (error) {
     await setJobStatus(jobId, 'failed', { error: error instanceof Error ? error.message : String(error) })

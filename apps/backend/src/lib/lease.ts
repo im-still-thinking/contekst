@@ -2,8 +2,9 @@ import { nanoid } from 'nanoid'
 import { eq, and } from 'drizzle-orm'
 import { db } from './db'
 import { memoryLeases } from '../models/lease'
-import { createLeaseOnChain, revokeLeaseOnChain, type CreateLeaseParams } from './blockchain'
 import { redis } from './redis'
+// COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+// import { grantTimeBasedDomainAccess, revokeDomainAccess, grantTimeBasedDomainAccessToSource, revokeDomainAccessFromSource } from './blockchain'
 
 export interface CreateLeaseRequest {
   walletId: string
@@ -68,20 +69,50 @@ export async function createLease(request: CreateLeaseRequest): Promise<{ succes
     
     console.log(`🔐 Creating lease for ${entity} on ${accessSpecifier} (${durationDays} days)`)
     
-    // Create lease on blockchain first
-    const blockchainParams: CreateLeaseParams = {
-      walletId,
-      entity,
-      accessSpecifier,
-      durationDays
-    }
+    // Generate lease ID and calculate expiration
+    const leaseId = nanoid()
+    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+    const durationInSeconds = durationDays * 24 * 60 * 60
     
-    const { leaseId: blockchainLeaseId, txHash, expiresAt } = await createLeaseOnChain(blockchainParams)
+    // Grant blockchain access - CONSOLIDATED approach syncing database and blockchain
+    // COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+    let txHash = ''
     
-    // Use the blockchain lease ID as our primary key for proper mapping
-    const leaseId = blockchainLeaseId
+    // Map entity to domain name for blockchain integration
+    // const domainMap: { [key: string]: string } = {
+    //   'claude': 'claude.ai',
+    //   'chatgpt': 'chatgpt.com', 
+    //   'openai': 'openai.com',
+    //   'anthropic': 'anthropic.com'
+    // }
+    // 
+    // const granteeDomain = domainMap[entity.toLowerCase()] || entity
+    // 
+    // // CONSOLIDATED LOGIC: Sync database accessSpecifier with blockchain sourceDomain
+    // let blockchainTx: string | null = null
+    // 
+    // if (accessSpecifier === 'global') {
+    //   // Global access: grant access to all memories regardless of source
+    //   blockchainTx = await grantTimeBasedDomainAccess(granteeDomain, durationInSeconds)
+    //   console.log(`🌐 Global access: ${granteeDomain} → all memories`)
+    // } else {
+    //   // Source-specific access: grant access only to memories from specific source  
+    //   blockchainTx = await grantTimeBasedDomainAccessToSource(granteeDomain, accessSpecifier, durationInSeconds)
+    //   console.log(`🎯 Source-specific access: ${granteeDomain} → ${accessSpecifier} memories`)
+    // }
+    // 
+    // if (blockchainTx) {
+    //   txHash = blockchainTx
+    //   console.log(`🔗 Blockchain lease granted: ${txHash}`)
+    // } else {
+    //   console.warn(`⚠️  Blockchain lease failed, proceeding with database-only lease`)
+    // }
+
+    // TESTING MODE: Simulate blockchain transaction
+    txHash = 'test-lease-tx-' + Date.now()
+    console.log(`🧪 TESTING: Simulated lease creation for ${entity} with ${accessSpecifier} access`)
     
-    // Store lease in database with blockchain lease ID
+    // Store lease in database
     await db.insert(memoryLeases).values({
       id: leaseId,
       walletId,
@@ -105,7 +136,7 @@ export async function createLease(request: CreateLeaseRequest): Promise<{ succes
     const ttlSeconds = Math.floor((expiresAt.getTime() - Date.now()) / 1000)
     await cacheLeaseInRedis(leaseId, leaseInfo, ttlSeconds)
     
-    console.log(`✅ Lease created successfully: ${leaseId}`)
+    console.log(`✅ Lease created successfully: ${leaseId} (blockchain: ${txHash ? 'yes' : 'no'})`)
     
     return { success: true, leaseId }
     
@@ -135,10 +166,51 @@ export async function revokeLease(leaseId: string, walletId: string): Promise<{ 
       return { success: false, error: 'Lease not found or already revoked' }
     }
     
-    // Revoke lease on blockchain using the same lease ID
-    const revokeTxHash = await revokeLeaseOnChain(leaseId)
+    // Revoke blockchain access - CONSOLIDATED approach 
+    let revokeTxHash = ''
     
-    // Update lease in database
+    // COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+    // if (existingLease.txHash) {
+    //   const { entity, accessSpecifier } = existingLease
+    //   
+    //   // Map entity to domain name for blockchain revocation
+    //   const domainMap: { [key: string]: string } = {
+    //     'claude': 'claude.ai',
+    //     'chatgpt': 'chatgpt.com',
+    //     'openai': 'openai.com', 
+    //     'anthropic': 'anthropic.com'
+    //   }
+    //   
+    //   const granteeDomain = domainMap[entity.toLowerCase()] || entity
+    //   
+    //   // CONSOLIDATED LOGIC: Match original grant type
+    //   let blockchainTx: string | null = null
+    //   
+    //   if (accessSpecifier === 'global') {
+    //     // Revoke global access
+    //     blockchainTx = await revokeDomainAccess(granteeDomain)
+    //     console.log(`🌐 Revoking global access: ${granteeDomain}`)
+    //   } else {
+    //     // Revoke source-specific access
+    //     blockchainTx = await revokeDomainAccessFromSource(granteeDomain, accessSpecifier) 
+    //     console.log(`🎯 Revoking source-specific access: ${granteeDomain} ✗ ${accessSpecifier}`)
+    //   }
+    //   
+    //   if (blockchainTx) {
+    //     revokeTxHash = blockchainTx
+    //     console.log(`🔗 Blockchain lease revoked: ${revokeTxHash}`)
+    //   } else {
+    //     console.warn(`⚠️  Failed to revoke blockchain lease`)
+    //   }
+    // }
+
+    // TESTING MODE: Simulate revoke transaction
+    if (existingLease.txHash) {
+      revokeTxHash = 'test-revoke-tx-' + Date.now()
+      console.log(`🧪 TESTING: Simulated lease revocation for ${existingLease.entity}`)
+    }
+    
+    // Update lease in database 
     await db.update(memoryLeases)
       .set({
         isRevoked: 'true',
@@ -150,7 +222,7 @@ export async function revokeLease(leaseId: string, walletId: string): Promise<{ 
     // Remove from Redis cache
     await removeLeaseFromRedis(leaseId)
     
-    console.log(`✅ Lease revoked successfully: ${leaseId}`)
+    console.log(`✅ Lease revoked successfully: ${leaseId} (blockchain: ${revokeTxHash ? 'yes' : 'no'})`)
     
     return { success: true }
     
