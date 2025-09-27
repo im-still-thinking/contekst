@@ -77,6 +77,130 @@
 					},
 					{
 						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "DomainAccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "DomainAccessRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "MemoryAccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "MemoryAccessRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
 						"internalType": "bytes32",
 						"name": "memoryId",
 						"type": "bytes32"
@@ -109,6 +233,160 @@
 				],
 				"name": "MemoryDeleted",
 				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "expirationTime",
+						"type": "uint256"
+					}
+				],
+				"name": "TimeBasedAccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "TimeBasedAccessRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "expirationTime",
+						"type": "uint256"
+					}
+				],
+				"name": "TimeBasedDomainAccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "expirationTime",
+						"type": "uint256"
+					}
+				],
+				"name": "TimeBasedMemoryAccessGranted",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "accessExpiration",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			},
 			{
 				"inputs": [
@@ -166,6 +444,64 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "domainAccessExpiration",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "domainAccessList",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "domainRegistry",
 				"outputs": [
@@ -209,11 +545,35 @@
 								"internalType": "address",
 								"name": "sourceDomain",
 								"type": "address"
+							},
+							{
+								"internalType": "string",
+								"name": "sourceDomainName",
+								"type": "string"
 							}
 						],
 						"internalType": "struct MemoryControl.Memory",
 						"name": "",
 						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "getMemorySourceDomain",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
 					}
 				],
 				"stateMutability": "view",
@@ -238,9 +598,209 @@
 						"internalType": "address",
 						"name": "grantee",
 						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"name": "grantAccessToDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "grantAccessToMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
 					}
 				],
 				"name": "grantAccessToUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"name": "grantDomainAccessToDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "grantDomainAccessToMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedAccessToDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedAccessToDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedAccessToMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedAccessToUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedDomainAccessToDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "durationInSeconds",
+						"type": "uint256"
+					}
+				],
+				"name": "grantTimeBasedDomainAccessToMemory",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -259,6 +819,73 @@
 					}
 				],
 				"name": "hasAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "hasAccessExpired",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "hasEnhancedAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "hasMemoryAccessExpired",
 				"outputs": [
 					{
 						"internalType": "bool",
@@ -317,6 +944,69 @@
 						"internalType": "address",
 						"name": "sourceDomain",
 						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomainName",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"name": "memoryAccessExpiration",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"name": "memoryAccessList",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
 					}
 				],
 				"stateMutability": "view",
@@ -341,9 +1031,107 @@
 						"internalType": "address",
 						"name": "grantee",
 						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"name": "revokeAccessFromDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "revokeAccessFromMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
 					}
 				],
 				"name": "revokeAccessFromUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"name": "revokeDomainAccessFromDomainMemories",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "revokeDomainAccessFromMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "revokeTimeBasedAccessFromDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "revokeTimeBasedAccessFromUser",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -381,16 +1169,99 @@
 						"_0": "The Memory struct containing all on-chain data"
 					}
 				},
+				"getMemorySourceDomain(bytes32)": {
+					"details": "Get the source domain name for a memory (helper function)",
+					"params": {
+						"memoryId": "The memory ID to check"
+					},
+					"returns": {
+						"_0": "The source domain name"
+					}
+				},
 				"grantAccessToDomain(string)": {
 					"details": "Grant access to an application domain",
 					"params": {
 						"domainName": "The domain name to grant access to (e.g., \"claude.ai\")  This function allows a user to grant access to an application like \"claude.ai\"."
 					}
 				},
+				"grantAccessToDomainMemories(address,string)": {
+					"details": "Grant access to all memories from a specific source domain",
+					"params": {
+						"grantee": "The wallet address to grant access to",
+						"sourceDomain": "The source domain to grant access to (e.g., \"claude.ai\")"
+					}
+				},
+				"grantAccessToMemory(address,bytes32)": {
+					"details": "Grant access to a specific memory",
+					"params": {
+						"grantee": "The wallet address to grant access to",
+						"memoryId": "The specific memory ID to grant access to"
+					}
+				},
 				"grantAccessToUser(address)": {
 					"details": "Grant access to another user's wallet",
 					"params": {
 						"grantee": "The wallet address to grant access to  This function allows a user to grant access to another user's wallet."
+					}
+				},
+				"grantDomainAccessToDomainMemories(string,string)": {
+					"details": "Grant access to all memories from a specific source domain for a domain",
+					"params": {
+						"granteeDomain": "The domain name to grant access to",
+						"sourceDomain": "The source domain to grant access to (e.g., \"claude.ai\")"
+					}
+				},
+				"grantDomainAccessToMemory(string,bytes32)": {
+					"details": "Grant access to a specific memory for a domain",
+					"params": {
+						"domainName": "The domain name to grant access to",
+						"memoryId": "The specific memory ID to grant access to"
+					}
+				},
+				"grantTimeBasedAccessToDomain(string,uint256)": {
+					"details": "Grant time-based access to an application domain",
+					"params": {
+						"domainName": "The domain name to grant access to",
+						"durationInSeconds": "Duration of access in seconds"
+					}
+				},
+				"grantTimeBasedAccessToDomainMemories(address,string,uint256)": {
+					"details": "Grant time-based access to all memories from a specific source domain",
+					"params": {
+						"durationInSeconds": "Duration of access in seconds",
+						"grantee": "The wallet address to grant access to",
+						"sourceDomain": "The source domain to grant access to"
+					}
+				},
+				"grantTimeBasedAccessToMemory(address,bytes32,uint256)": {
+					"details": "Grant time-based access to a specific memory",
+					"params": {
+						"durationInSeconds": "Duration of access in seconds",
+						"grantee": "The wallet address to grant access to",
+						"memoryId": "The specific memory ID to grant access to"
+					}
+				},
+				"grantTimeBasedAccessToUser(address,uint256)": {
+					"details": "Grant time-based access to another user's wallet",
+					"params": {
+						"durationInSeconds": "Duration of access in seconds",
+						"grantee": "The wallet address to grant access to"
+					}
+				},
+				"grantTimeBasedDomainAccessToDomainMemories(string,string,uint256)": {
+					"details": "Grant time-based access to all memories from a specific source domain for a domain",
+					"params": {
+						"durationInSeconds": "Duration of access in seconds",
+						"granteeDomain": "The domain name to grant access to",
+						"sourceDomain": "The source domain to grant access to"
+					}
+				},
+				"grantTimeBasedDomainAccessToMemory(string,bytes32,uint256)": {
+					"details": "Grant time-based access to a specific memory for a domain",
+					"params": {
+						"domainName": "The domain name to grant access to",
+						"durationInSeconds": "Duration of access in seconds",
+						"memoryId": "The specific memory ID to grant access to"
 					}
 				},
 				"hasAccess(bytes32,address)": {
@@ -401,6 +1272,35 @@
 					},
 					"returns": {
 						"_0": "True if the grantee has access, false otherwise"
+					}
+				},
+				"hasAccessExpired(address)": {
+					"details": "Check if access has expired for a grantee",
+					"params": {
+						"grantee": "The wallet address to check"
+					},
+					"returns": {
+						"_0": "True if access has expired, false otherwise"
+					}
+				},
+				"hasEnhancedAccess(bytes32,address)": {
+					"details": "Check if a grantee has access to a memory with enhanced granular control",
+					"params": {
+						"grantee": "The wallet address to check access for",
+						"memoryId": "The unique memory ID to check access for"
+					},
+					"returns": {
+						"_0": "True if the grantee has access, false otherwise"
+					}
+				},
+				"hasMemoryAccessExpired(address,bytes32)": {
+					"details": "Check if memory-specific access has expired for a grantee",
+					"params": {
+						"grantee": "The wallet address to check",
+						"memoryId": "The memory ID to check"
+					},
+					"returns": {
+						"_0": "True if access has expired, false otherwise"
 					}
 				},
 				"isMemoryExists(bytes32)": {
@@ -418,10 +1318,50 @@
 						"domainName": "The domain name to revoke access from  This function allows users to revoke permissions from applications at any time."
 					}
 				},
+				"revokeAccessFromDomainMemories(address,string)": {
+					"details": "Revoke access to all memories from a specific source domain",
+					"params": {
+						"grantee": "The wallet address to revoke access from",
+						"sourceDomain": "The source domain to revoke access to"
+					}
+				},
+				"revokeAccessFromMemory(address,bytes32)": {
+					"details": "Revoke access to a specific memory",
+					"params": {
+						"grantee": "The wallet address to revoke access from",
+						"memoryId": "The specific memory ID to revoke access to"
+					}
+				},
 				"revokeAccessFromUser(address)": {
 					"details": "Revoke access from another user's wallet",
 					"params": {
 						"grantee": "The wallet address to revoke access from  This function allows users to revoke permissions at any time."
+					}
+				},
+				"revokeDomainAccessFromDomainMemories(string,string)": {
+					"details": "Revoke access to all memories from a specific source domain for a domain",
+					"params": {
+						"granteeDomain": "The domain name to revoke access from",
+						"sourceDomain": "The source domain to revoke access to"
+					}
+				},
+				"revokeDomainAccessFromMemory(string,bytes32)": {
+					"details": "Revoke access to a specific memory for a domain",
+					"params": {
+						"domainName": "The domain name to revoke access from",
+						"memoryId": "The specific memory ID to revoke access to"
+					}
+				},
+				"revokeTimeBasedAccessFromDomain(string)": {
+					"details": "Revoke time-based access from a domain",
+					"params": {
+						"domainName": "The domain name to revoke access from"
+					}
+				},
+				"revokeTimeBasedAccessFromUser(address)": {
+					"details": "Revoke time-based access from a user",
+					"params": {
+						"grantee": "The wallet address to revoke access from"
 					}
 				}
 			},
@@ -459,11 +1399,11 @@
 			]
 		},
 		"contracts/MemoryControl.sol": {
-			"keccak256": "0x78e7a7be5ea0f8f5a3489ee53111e7bb1e9ac758fc41c460f9070ec58aae2f19",
+			"keccak256": "0xdcebf1b6a69bb8aba98825f4ed56d4492880bbb3f34df55ba4869c23750c2030",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://4237cd5cd477ab286e0bebc86baf0c6e7227579e5d322752c176549f726d259c",
-				"dweb:/ipfs/QmYAnGPbex5kA8TGGDPcCbiemy3FTnDoBQ175jDd8nQyCA"
+				"bzz-raw://7940b9486b6695bc213ac1a6d05fbd3dd4f47d0360be7a42a6b6af360b5dd3a8",
+				"dweb:/ipfs/QmZjsK21TzhdaP9kGjf1vwewDZsrUG8RZQnjTagAgz1VPx"
 			]
 		}
 	},
