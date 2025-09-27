@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
-import { authRoutes } from './routes/auth'
+import { apiRoutes } from './routes/auth'
 import { memoryRoutes } from './routes/memory'
 import { leaseRoutes } from './routes/lease'
 import { auditRoutes } from './routes/audit'
@@ -15,10 +15,14 @@ initializeCollection().then(() => {
 })
 
 const app = new Elysia()
-    .use(cors())
+    .use(cors({
+      origin: "http://localhost:3001",
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }))
+    .use(apiRoutes)
     .group('/api/v1', (app) => 
       app
-        .use(authRoutes)
         .use(memoryRoutes)
         .use(leaseRoutes)
         .use(auditRoutes)

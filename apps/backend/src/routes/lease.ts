@@ -1,13 +1,27 @@
 import { Elysia, t } from 'elysia'
 import { createLease, revokeLease, getUserLeases, isLeaseValid } from '../lib/lease'
+import { authMiddleware, getWalletFromContext } from '../lib/middleware'
 
 export const leaseRoutes = new Elysia({ prefix: '/lease' })
+    .onBeforeHandle(async (context) => {
+        // Only protect non-public endpoints
+        if (context.request.url.includes('/check/')) {
+            return // Allow public lease checking
+        }
+        
+        const result = await authMiddleware(context)
+        if (!result.success) {
+            context.set.status = 401
+            return { error: result.error }
+        }
+    })
     // Create a new lease
-    .post('/create', async ({ body }) => {
-        const { walletId, entity, accessSpecifier, durationDays } = body
+    .post('/create', async ({ body, ...context }) => {
+        const { entity, accessSpecifier, durationDays } = body
+        const walletId = getWalletFromContext(context)
 
         if (!walletId || !entity || !accessSpecifier) {
-            return { error: 'Missing required fields: walletId, entity, accessSpecifier' }
+            return { error: 'Missing required fields: entity, accessSpecifier' }
         }
 
         const result = await createLease({
@@ -28,7 +42,6 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
         return { error: result.error }
     }, {
         body: t.Object({
-            walletId: t.String(),
             entity: t.String({ 
                 description: 'Entity being granted access (claude, chatgpt, etc.)' 
             }),
@@ -44,11 +57,12 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
     })
 
     // Revoke an existing lease
-    .post('/revoke', async ({ body }) => {
-        const { leaseId, walletId } = body
+    .post('/revoke', async ({ body, ...context }) => {
+        const { leaseId } = body
+        const walletId = getWalletFromContext(context)
 
         if (!leaseId || !walletId) {
-            return { error: 'Missing required fields: leaseId, walletId' }
+            return { error: 'Missing required fields: leaseId' }
         }
 
         const result = await revokeLease(leaseId, walletId)
@@ -63,8 +77,7 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
         return { error: result.error }
     }, {
         body: t.Object({
-            leaseId: t.String(),
-            walletId: t.String()
+            leaseId: t.String()
         })
     })
 
@@ -83,7 +96,13 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
     })
 
     // Get all leases for a wallet
-    .get('/list/:walletId', async ({ params: { walletId } }) => {
+    .get('/list', async ({ ...context }) => {
+        const walletId = getWalletFromContext(context)
+        
+        if (!walletId) {
+            return { error: 'Authentication required' }
+        }
+        
         try {
             const leases = await getUserLeases(walletId)
             
