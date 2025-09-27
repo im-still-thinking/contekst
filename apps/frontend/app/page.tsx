@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
 
 const analyticsData = [
   {
@@ -104,6 +105,24 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-custom-primary-200 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Navigation Header */}
+        <div className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-custom-primary-500">Contekst Dashboard</h1>
+          <div className="flex gap-4">
+            <Link
+              href="/auth"
+              className="px-6 py-2 bg-custom-primary-500 text-white rounded-lg hover:bg-custom-primary-600 transition-colors duration-200 font-medium"
+            >
+              Authenticate Wallet
+            </Link>
+            <Link
+              href="/dashboard"
+              className="px-6 py-2 bg-white text-custom-primary-500 border border-custom-primary-300 rounded-lg hover:bg-custom-primary-50 transition-colors duration-200 font-medium"
+            >
+              Protected Dashboard
+            </Link>
+          </div>
+        </div>
         {/* Header Stats Cards */}
         <div className="grid grid-cols-5 gap-5 mb-8">
           {/* Total Memories Card */}
