@@ -1,16 +1,22 @@
 import { nanoid } from 'nanoid'
 import { keccak256 } from 'js-sha3'
 import { db } from './db'
-import { memories, memoryEmbeddings } from '../models/memory'
-import { extractMemoryFromPrompt, generateMemoryTags, generateEmbedding } from '../lib/ai'
+import { memories, memoryEmbeddings, memoryImages } from '../models/memory'
+import { extractMemoryFromPrompt, generateMemoryTags, generateEmbedding, generateImageSummary } from '../lib/ai'
 import { storeEmbedding, type MemoryMetadata } from '../lib/qdrant'
 import { setJobStatus } from '../lib/redis'
+
+interface ImageData {
+  base64: string
+  identifier: string
+}
 
 interface ProcessMemoryRequest {
   userId: string
   prompt: string
   source: string
   conversationThread?: string
+  images?: ImageData[]
 }
 
 function createBlockchainFingerprint(data: {
@@ -19,13 +25,15 @@ function createBlockchainFingerprint(data: {
   extractedMemory: string
   tags: string[]
   conversationThread?: string
+  imageIdentifiers?: string[]
 }): string {
   const dataString = JSON.stringify({
     prompt: data.prompt,
     source: data.source,
     extractedMemory: data.extractedMemory,
     tags: data.tags.sort(), // Sort tags for consistent hashing
-    conversationThread: data.conversationThread || null
+    conversationThread: data.conversationThread || null,
+    imageIdentifiers: data.imageIdentifiers?.sort() || null
   })
   
   return '0x' + keccak256(dataString)
@@ -39,7 +47,7 @@ interface ProcessMemoryResponse {
 
 async function processMemoryBackground(request: ProcessMemoryRequest, jobId: string) {
   try {
-    const { userId, prompt, source, conversationThread } = request
+    const { userId, prompt, source, conversationThread, images } = request
     
     console.log(`🚀 Background job ${jobId} started`)
     await setJobStatus(jobId, 'processing', { step: 'extracting_memory' })
@@ -52,12 +60,24 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       return
     }
 
+    // Process images if provided
+    let imageSummaries: string[] = []
+    if (images && images.length > 0) {
+      await setJobStatus(jobId, 'processing', { step: 'processing_images' })
+      
+      imageSummaries = await Promise.all(
+        images.map(image => generateImageSummary(image.base64))
+      )
+    }
+
     await setJobStatus(jobId, 'processing', { step: 'generating_tags_and_embeddings' })
+    
+    const enrichedMemory = [extractedMemory, ...imageSummaries.filter(Boolean)].join(' ')
     
     // Generate tags and embedding in parallel
     const [tags, embedding] = await Promise.all([
-      generateMemoryTags(extractedMemory),
-      generateEmbedding(extractedMemory)
+      generateMemoryTags(enrichedMemory),
+      generateEmbedding(enrichedMemory)
     ])
     
     const memoryId = nanoid()
@@ -66,9 +86,10 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
     const blockchainFingerprint = createBlockchainFingerprint({
       prompt,
       source,
-      extractedMemory,
+      extractedMemory: enrichedMemory,
       tags,
-      conversationThread
+      conversationThread,
+      imageIdentifiers: images?.map(img => img.identifier)
     })
     
     // Store memory in database
@@ -78,10 +99,26 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       prompt,
       source,
       conversationThread,
-      extractedMemory,
+      extractedMemory: enrichedMemory,
       tags,
       blockchainFingerprint
     })
+
+    // Store images if provided
+    if (images && images.length > 0) {
+      await setJobStatus(jobId, 'processing', { step: 'storing_images' })
+      
+      const imageRecords = images.map((image, index) => ({
+        id: nanoid(),
+        memoryId,
+        userId,
+        identifier: image.identifier,
+        base64: image.base64,
+        summary: imageSummaries[index] || null
+      }))
+      
+      await db.insert(memoryImages).values(imageRecords)
+    }
 
     // Store embedding in Qdrant
     const metadata: MemoryMetadata = {

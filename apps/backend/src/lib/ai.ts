@@ -69,3 +69,35 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     throw error
   }
 }
+
+export async function generateImageSummary(base64Image: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Analyze this image and provide a concise 2-3 sentence summary focusing on key visual elements, context, and any text or important details that could be memorable.'
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 150,
+      temperature: 0.3
+    })
+
+    return response.choices[0]?.message?.content || ''
+  } catch (error) {
+    console.error('Image summary generation failed:', error)
+    return ''
+  }
+}

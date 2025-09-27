@@ -4,7 +4,7 @@ import { getJobStatus } from '../lib/redis'
 
 export const memoryRoutes = new Elysia({ prefix: '/memory' })
     .post('/process', async ({ body }) => {
-        const { userId, prompt, source, conversationThread } = body
+        const { userId, prompt, source, conversationThread, images } = body
 
         if (!userId || !prompt || !source) {
             return { error: 'Missing required fields: userId, prompt, source' }
@@ -14,7 +14,8 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
             userId,
             prompt,
             source,
-            conversationThread
+            conversationThread,
+            images
         })
 
         if (result.success) {
@@ -31,7 +32,11 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
             userId: t.String(),
             prompt: t.String(),
             source: t.String(),
-            conversationThread: t.Optional(t.String())
+            conversationThread: t.Optional(t.String()),
+            images: t.Optional(t.Array(t.Object({
+                base64: t.String(),
+                identifier: t.String()
+            })))
         })
     })
 

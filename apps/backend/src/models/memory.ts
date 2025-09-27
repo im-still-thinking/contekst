@@ -37,3 +37,21 @@ export const memoryEmbeddings = mysqlTable(
     uniqueIndex('qdrant_idx').on(table.qdrantId)
   ]
 )
+
+export const memoryImages = mysqlTable(
+  'memory_images',
+  {
+    id: varchar('id', { length: 256 }).primaryKey(),
+    memoryId: varchar('memory_id', { length: 256 }).notNull().references(() => memories.id, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 256 }).notNull().references(() => users.walletId),
+    identifier: varchar('identifier', { length: 256 }).notNull(), // Points to where image is stored
+    base64: text('base64').notNull(), // Store base64 for processing
+    summary: text('summary'), // AI-generated summary of the image
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('memory_idx').on(table.memoryId),
+    index('user_idx').on(table.userId),
+    index('identifier_idx').on(table.identifier)
+  ]
+)
