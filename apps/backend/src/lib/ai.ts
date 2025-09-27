@@ -5,31 +5,6 @@ const openai = new OpenAI({
   apiKey: config.OPENAI_API_KEY
 })
 
-export async function extractMemoryFromPrompt(prompt: string): Promise<string> {
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Extract key memorable insights from user prompts. Focus on preferences, technical context, goals, and personal context. Return 2-3 sentences.`
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 150,
-      temperature: 0.3
-    })
-
-    return response.choices[0]?.message?.content || ''
-  } catch (error) {
-    console.error('AI memory extraction failed:', error)
-    return ''
-  }
-}
-
 export async function generateMemoryTags(memory: string): Promise<string[]> {
   try {
     const response = await openai.chat.completions.create({
@@ -70,34 +45,50 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-export async function generateImageSummary(base64Image: string): Promise<string> {
+export async function extractMemoryWithImages(prompt: string, images?: { base64: string; identifier: string }[]): Promise<string> {
   try {
+    const messages: any[] = [
+      {
+        role: 'system',
+        content: `Extract key memorable insights from user prompts and any associated images. Consider the relationship between text and visual content to create a cohesive memory. Focus on preferences, technical context, goals, personal context, and visual elements. Return 2-3 sentences that capture both textual and visual insights.`
+      }
+    ]
+
+    // Build the user message with text and images
+    const userContent: any[] = [
+      {
+        type: 'text',
+        text: prompt
+      }
+    ]
+
+    // Add images if provided
+    if (images && images.length > 0) {
+      images.forEach(image => {
+        userContent.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:image/jpeg;base64,${image.base64}`
+          }
+        })
+      })
+    }
+
+    messages.push({
+      role: 'user',
+      content: userContent
+    })
+
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Analyze this image and provide a concise 2-3 sentence summary focusing on key visual elements, context, and any text or important details that could be memorable.'
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`
-              }
-            }
-          ]
-        }
-      ],
-      max_tokens: 150,
+      model: 'gpt-4o',  // Use gpt-4o for vision capabilities
+      messages,
+      max_tokens: 200,  // Slightly more tokens for richer context
       temperature: 0.3
     })
 
     return response.choices[0]?.message?.content || ''
   } catch (error) {
-    console.error('Image summary generation failed:', error)
+    console.error('AI memory extraction with images failed:', error)
     return ''
   }
 }
