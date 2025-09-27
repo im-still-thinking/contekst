@@ -1,8 +1,6 @@
 import { Elysia, t } from 'elysia'
 import { eq, and, desc } from 'drizzle-orm'
 import { processMemory, retrieveRelevantMemories } from '../lib/memory'
-// COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
-// import { deleteMemoryFromBlockchain } from '../lib/blockchain'
 import { getJobStatus } from '../lib/redis'
 import { db } from '../lib/db'
 import { memories } from '../models/memory'
@@ -177,56 +175,56 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
     })
 
     // Delete a memory
-    .delete('/:memoryId', async ({ params: { memoryId }, ...context }) => {
-        const userId = getWalletFromContext(context)
+    // .delete('/:memoryId', async ({ params: { memoryId }, ...context }) => {
+    //     const userId = getWalletFromContext(context)
         
-        if (!userId) {
-            return { error: 'Authentication required' }
-        }
+    //     if (!userId) {
+    //         return { error: 'Authentication required' }
+    //     }
         
-        try {
-            // Check if memory exists and belongs to user
-            const memory = await db.select()
-                .from(memories)
-                .where(and(
-                    eq(memories.id, memoryId),
-                    eq(memories.userId, userId)
-                ))
-                .limit(1)
+    //     try {
+    //         // Check if memory exists and belongs to user
+    //         const memory = await db.select()
+    //             .from(memories)
+    //             .where(and(
+    //                 eq(memories.id, memoryId),
+    //                 eq(memories.userId, userId)
+    //             ))
+    //             .limit(1)
             
-            if (memory.length === 0) {
-                return { error: 'Memory not found or access denied' }
-            }
+    //         if (memory.length === 0) {
+    //             return { error: 'Memory not found or access denied' }
+    //         }
             
-            const memoryRecord = memory[0]!
+    //         const memoryRecord = memory[0]!
             
-            // Delete from blockchain first (using the blockchain fingerprint as memory ID)
-            // COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
-            // const blockchainTxHash = await deleteMemoryFromBlockchain(memoryRecord.blockchainFingerprint)
+    //         // Delete from blockchain first (using the blockchain fingerprint as memory ID)
+    //         // COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+    //         // const blockchainTxHash = await deleteMemoryFromBlockchain(memoryRecord.blockchainFingerprint)
             
-            // TESTING MODE: Simulate blockchain deletion
-            const blockchainTxHash = 'test-delete-tx-' + Date.now()
-            console.log(`🧪 TESTING: Simulated blockchain deletion for ${memoryId}`)
+    //         // TESTING MODE: Simulate blockchain deletion
+    //         const blockchainTxHash = 'test-delete-tx-' + Date.now()
+    //         console.log(`🧪 TESTING: Simulated blockchain deletion for ${memoryId}`)
             
-            // Delete from database (cascade will handle related records)
-            await db.delete(memories)
-                .where(and(
-                    eq(memories.id, memoryId),
-                    eq(memories.userId, userId)
-                ))
+    //         // Delete from database (cascade will handle related records)
+    //         await db.delete(memories)
+    //             .where(and(
+    //                 eq(memories.id, memoryId),
+    //                 eq(memories.userId, userId)
+    //             ))
             
-            console.log(`🗑️  Memory deleted: ${memoryId} (blockchain: ${blockchainTxHash || 'failed'})`)
+    //         console.log(`🗑️  Memory deleted: ${memoryId} (blockchain: ${blockchainTxHash || 'failed'})`)
             
-            return {
-                success: true,
-                message: 'Memory deleted successfully',
-                blockchainTxHash: blockchainTxHash || null
-            }
-        } catch (error) {
-            console.error('Memory deletion failed:', error)
-            return { 
-                error: 'Failed to delete memory',
-                details: error instanceof Error ? error.message : String(error)
-            }
-        }
-    })
+    //         return {
+    //             success: true,
+    //             message: 'Memory deleted successfully',
+    //             blockchainTxHash: blockchainTxHash || null
+    //         }
+    //     } catch (error) {
+    //         console.error('Memory deletion failed:', error)
+    //         return { 
+    //             error: 'Failed to delete memory',
+    //             details: error instanceof Error ? error.message : String(error)
+    //         }
+    //     }
+    //})
