@@ -1,6 +1,6 @@
-# Memory System Smart Contracts
+# Contekst : Memory System Smart Contracts
 
-This directory contains the smart contracts for the Memory System protocol, designed to run on the Hedera Smart Contract Service (HSCS). The system consists of two main contracts that work together to provide secure, cost-effective, and scalable memory management with **advanced granular access control** and **time-based permissions**.
+This directory contains the smart contracts for the Contekst Memory System protocol, designed to run on the Hedera Smart Contract Service (HSCS). The system consists of two main contracts that work together to provide secure, cost-effective, and scalable memory management with **advanced granular access control** and **time-based permissions**.
 
 ## Contract Architecture
 
@@ -115,7 +115,7 @@ All significant actions emit events for complete transparency:
 
 1. **Compile contracts**:
    ```bash
-   npx hardhat compile
+   npx hardhat build
    ```
 
 2. **Run tests**:
@@ -188,12 +188,48 @@ Access is checked in this order, and the first match determines the result.
 - **Immutable Audit Trail**: All actions are permanently recorded as events
 - **Access Hierarchy**: Clear priority system prevents permission conflicts
 
+## Hedera Native Features
+
+The Memory System smart contracts leverage several **Hedera native features** for optimal performance and integration:
+
+### 🏗️ **Hedera Smart Contract Service (HSCS)**
+- **Native Deployment**: Contracts are designed specifically for Hedera's EVM-compatible smart contract service
+- **Gas Optimization**: Optimized for Hedera's predictable gas pricing model
+- **Transaction Structure**: Built to work seamlessly with Hedera's transaction format
+
+### ⏰ **Hedera Consensus Timestamps**
+- **`block.timestamp`**: Used for time-based access control and memory creation timestamps
+- **Automatic Expiration**: Leverages Hedera's precise consensus timestamps for accurate time-based access revocation
+- **Event Timestamps**: All events use Hedera's consensus timestamps for immutable audit trails
+
+### 🔗 **Hedera Account Integration**
+- **Address Mapping**: Uses Hedera account addresses for domain registration and access control
+- **Account Verification**: Leverages Hedera's native account verification system
+- **Cross-Account Permissions**: Built on Hedera's account-based permission model
+
+### 🌐 **Hedera Network Features**
+- **EDR Simulation**: Development environment uses Hedera's EDR (Ethereum Development Runtime) simulation
+- **L1 Chain Support**: Configured for Hedera's L1 mainnet deployment
+- **Optimized Networks**: Separate configurations for mainnet and testnet environments
+
+### 💰 **Hedera Economic Model**
+- **Cost-Effective Storage**: Hybrid on-chain/off-chain model optimized for Hedera's storage costs
+- **Gas Efficiency**: Contract size and function optimization for Hedera's gas model
+- **Event-Driven Architecture**: Leverages Hedera's efficient event logging system
+
+### 🔐 **Hedera Security Features**
+- **Immutable Audit Trail**: Uses Hedera's immutable event logging for complete transparency
+- **Cryptographic Verification**: Leverages Hedera's native cryptographic primitives
+- **Consensus Security**: Built on Hedera's aBFT consensus mechanism
+
 ## Hedera Compatibility
 
 The contracts are designed to work seamlessly with the Hedera Smart Contract Service:
-- Compatible with Hedera's gas model
-- Optimized for Hedera's transaction structure
-- Uses standard Solidity patterns for maximum compatibility
+- **Native HSCS Integration**: Built specifically for Hedera's smart contract service
+- **Gas Model Optimization**: Compatible with Hedera's predictable gas pricing
+- **Transaction Structure**: Optimized for Hedera's transaction format
+- **Account System**: Leverages Hedera's native account management
+- **Consensus Timestamps**: Uses Hedera's precise time consensus for time-based features
 
 ## Testing
 
