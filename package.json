@@ -13,9 +13,14 @@
   "scripts": {
     "dev": "bun run --filter '*' dev",
     "build": "bun run --filter '*' build",
-    "clean": "bun run --filter '*' clean"
+    "clean": "bun run --filter '*' clean",
+    "dev:extension": "bun run -F @contekst/extension dev",
+    "build:extension": "bun run -F @contekst/extension build",
+    "dev:frontend": "bun run -F @contekst/frontend dev",
+    "build:frontend": "bun run -F @contekst/frontend build"
   },
   "dependencies": {
+    "@metamask/sdk": "^0.33.1",
     "drizzle-orm": "^0.44.5",
     "mysql2": "^3.15.1"
   }

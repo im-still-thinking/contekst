@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Custom theme colors used in the dashboard */
+:root {
+  --custom-primary-100: #FFFFFF;
+  --custom-primary-200: #F4EEFF;
+  --custom-primary-300: #DCD6F7;
+  --custom-primary-400: #A6B1E1;
+  --custom-primary-500: #424874;
+  --custom-primary-600: #110C1B;
+}
+
+.bg-custom-primary-100 { background-color: var(--custom-primary-100); }
+.bg-custom-primary-200 { background-color: var(--custom-primary-200); }
+.bg-custom-primary-300 { background-color: var(--custom-primary-300); }
+.bg-custom-primary-400 { background-color: var(--custom-primary-400); }
+.bg-custom-primary-500 { background-color: var(--custom-primary-500); }
+.bg-custom-primary-600 { background-color: var(--custom-primary-600); }
+
+.text-custom-primary-300 { color: var(--custom-primary-300); }
+.text-custom-primary-400 { color: var(--custom-primary-400); }
+.text-custom-primary-500 { color: var(--custom-primary-500); }
+.text-custom-primary-600 { color: var(--custom-primary-600); }
+
+.border-custom-primary-100 { border-color: var(--custom-primary-100); }
+.border-custom-primary-200 { border-color: var(--custom-primary-200); }
+.border-custom-primary-300 { border-color: var(--custom-primary-300); }
+.border-custom-primary-400 { border-color: var(--custom-primary-400); }
+.border-custom-primary-500 { border-color: var(--custom-primary-500); }
+.border-custom-primary-600 { border-color: var(--custom-primary-600); }
+
+.shadow-custom-primary-100 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.1); }
+.shadow-custom-primary-200 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.2); }
+.shadow-custom-primary-300 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.3); }
+.shadow-custom-primary-400 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.4); }
+.shadow-custom-primary-500 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.5); }
+.shadow-custom-primary-600 { box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.6); }
