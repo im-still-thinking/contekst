@@ -24,7 +24,15 @@ export async function generateMemoryTags(memory: string): Promise<string[]> {
     })
 
     const content = response.choices[0]?.message?.content || '[]'
-    return JSON.parse(content)
+    
+    // Clean the content - remove markdown code blocks and extra whitespace
+    const cleanedContent = content
+      .replace(/```json\n?/g, '')  // Remove ```json
+      .replace(/```\n?/g, '')      // Remove closing ```
+      .replace(/`/g, '')           // Remove any remaining backticks
+      .trim()
+    
+    return JSON.parse(cleanedContent)
   } catch (error) {
     console.error('Tag generation failed:', error)
     return ['general', 'memory']
@@ -33,12 +41,21 @@ export async function generateMemoryTags(memory: string): Promise<string[]> {
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
+    console.log(`🧠 Generating embedding for text: ${text.substring(0, 100)}...`)
+    
     const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       input: text
     })
 
-    return response.data[0]?.embedding || []
+    const embedding = response.data[0]?.embedding || []
+    console.log(`✅ Generated embedding with ${embedding.length} dimensions`)
+    
+    if (embedding.length !== 3072) {
+      console.warn(`⚠️  Unexpected embedding dimensions: ${embedding.length} (expected 3072)`)
+    }
+
+    return embedding
   } catch (error) {
     console.error('Embedding generation failed:', error)
     throw error

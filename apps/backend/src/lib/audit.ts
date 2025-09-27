@@ -2,7 +2,9 @@ import { nanoid } from 'nanoid'
 import { eq, desc } from 'drizzle-orm'
 import { db } from './db'
 import { memoryAuditTrail } from '../models/audit'
-import { recordAuditOnChain, type AuditTrailParams } from './blockchain'
+// COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+// import { recordAuditOnChain, type AuditTrailParams } from './blockchain'
+// import type { AuditTrailParams } from './blockchain'
 
 export interface CreateAuditRequest {
   walletId: string
@@ -46,18 +48,16 @@ export async function recordAuditTrail(request: CreateAuditRequest): Promise<str
   try {
     let txHash: string | null = null
 
-    // Record on blockchain if we have the lease ID
-    if (leaseId) {
-      const auditParams: AuditTrailParams = {
-        walletId,
-        leaseId, // This is now the blockchain lease ID
-        entity,
-        action,
-        memoryIds: accessedMemories
-      }
-      
-      txHash = await recordAuditOnChain(auditParams)
-    }
+    // Record on blockchain for immutable audit trail
+    // COMMENTED OUT FOR TESTING - NO BLOCKCHAIN
+    // const auditParams: AuditTrailParams = {
+    //   walletId,
+    //   entity,
+    //   action,
+    //   memoryIds: accessedMemories
+    // }
+    // 
+    // txHash = await recordAuditOnChain(auditParams)
 
     // Store in database
     await db.insert(memoryAuditTrail).values({
