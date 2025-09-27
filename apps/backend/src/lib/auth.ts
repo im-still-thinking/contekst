@@ -1,7 +1,18 @@
-import { ethers } from 'ethers'
+import jwt from 'jsonwebtoken'
+import { SiweMessage } from 'siwe'
 import { db } from './db'
 import { users } from '../models/user'
 import { eq } from 'drizzle-orm'
+import { config } from './config'
+
+const JWT_SECRET = config.JWT_SECRET || 'your-super-secret-jwt-key'
+const JWT_EXPIRES_IN = '365d'
+
+export interface JwtPayload {
+  walletId: string
+  iat?: number
+  exp?: number
+}
 
 export async function ensureUser(walletAddress: string) {
   const normalizedAddress = walletAddress.toLowerCase()
@@ -19,21 +30,72 @@ export async function ensureUser(walletAddress: string) {
   return normalizedAddress
 }
 
-// Verify wallet signature
-export async function verifySignature(walletAddress: string, signature: string, message: string) {
-  const normalizedAddress = walletAddress.toLowerCase()
-  
+export function generateAccessToken(walletId: string): string {
+  return jwt.sign({ walletId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+}
+
+export function verifyAccessToken(token: string): JwtPayload | null {
   try {
-    const recoveredAddress = ethers.utils.verifyMessage(message, signature)
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+    return decoded as JwtPayload
+  } catch (error) {
+    return null
+  }
+}
+
+// Verify SIWE message and signature
+export async function verifySiweMessage(message: string, signature: string) {
+  try {
+    console.log('🔍 Creating SIWE message from string...')
     
-    if (recoveredAddress.toLowerCase() !== normalizedAddress) {
-      return { success: false, error: 'Invalid signature' }
+    // Parse the SIWE message string
+    const siweMessage = new SiweMessage(message)
+    console.log('✅ SIWE message created:', {
+      address: siweMessage.address,
+      domain: siweMessage.domain,
+      nonce: siweMessage.nonce
+    })
+    
+    // Validate nonce first
+    console.log('🔑 Validating nonce...')
+    const { validateAndClearNonce } = await import('./redis')
+    const isValidNonce = await validateAndClearNonce(siweMessage.address.toLowerCase(), siweMessage.nonce)
+    
+    if (!isValidNonce) {
+      console.log('❌ Invalid or expired nonce')
+      return { success: false, error: 'Invalid or expired nonce' }
+    }
+    console.log('✅ Nonce validated and cleared')
+    
+    console.log('🔐 Verifying signature...')
+    const fields = await siweMessage.verify({ signature })
+    console.log('📊 Verification fields:', fields)
+    
+    if (!fields.success) {
+      console.log('❌ SIWE signature verification failed')
+      return { success: false, error: 'Invalid SIWE signature' }
     }
     
-    await ensureUser(normalizedAddress)
+    const normalizedAddress = siweMessage.address.toLowerCase()
+    console.log('👤 Normalized address:', normalizedAddress)
     
-    return { success: true, address: normalizedAddress }
+    await ensureUser(normalizedAddress)
+    console.log('✅ User ensured in database')
+    
+    // Generate access token
+    const accessToken = generateAccessToken(normalizedAddress)
+    console.log('🎫 Access token generated')
+    
+    return { 
+      success: true, 
+      address: normalizedAddress,
+      accessToken
+    }
   } catch (error) {
-    return { success: false, error: 'Signature verification failed' }
+    console.log('💥 SIWE verification error:', error)
+    console.log('📄 Message that failed:', message)
+    console.log('✍️ Signature that failed:', signature)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return { success: false, error: `SIWE verification failed: ${errorMessage}` }
   }
 }

@@ -16,9 +16,9 @@ const App: React.FC = () => {
       }
     });
 
-    // Check for existing wallet connection
-    chrome.storage.local.get(['walletAddress', 'walletConnected'], (result) => {
-      if (result.walletConnected && result.walletAddress) {
+    // Check for existing wallet connection and authentication
+    chrome.storage.local.get(['walletAddress', 'walletConnected', 'accessToken'], (result) => {
+      if (result.walletConnected && result.walletAddress && result.accessToken) {
         setWalletAddress(result.walletAddress);
         setIsWalletConnected(true);
       }
@@ -52,21 +52,36 @@ const App: React.FC = () => {
         return;
       }
 
-      if (event.data.type === 'WALLET_CONNECTED') {
-        console.log('Received wallet connection:', event.data);
+      if (event.data.type === 'AUTH_SUCCESS') {
+        console.log('Received authentication success:', event.data);
         
         setWalletAddress(event.data.address);
         setIsWalletConnected(true);
         
-        // Store in chrome storage
+        // Store authentication data in chrome storage
         chrome.storage.local.set({
           walletAddress: event.data.address,
           walletConnected: true,
+          accessToken: event.data.accessToken,
+          refreshToken: event.data.refreshToken,
           connectedAt: event.data.timestamp
         });
 
         // Clean up the message listener
         window.removeEventListener('message', handleMessage);
+        
+        // Close the wallet window if it's still open
+        if (!walletWindow.closed) {
+          walletWindow.close();
+        }
+      } else if (event.data.type === 'AUTH_ERROR') {
+        console.error('Authentication failed:', event.data.error);
+        
+        // Clean up the message listener
+        window.removeEventListener('message', handleMessage);
+        
+        // Optionally show error to user
+        alert('Authentication failed: ' + event.data.error);
       }
     };
 
@@ -85,7 +100,7 @@ const App: React.FC = () => {
   const disconnectWallet = () => {
     setWalletAddress(null);
     setIsWalletConnected(false);
-    chrome.storage.local.remove(['walletAddress', 'walletConnected', 'connectedAt']);
+    chrome.storage.local.remove(['walletAddress', 'walletConnected', 'accessToken', 'refreshToken', 'connectedAt']);
   };
 
   const formatAddress = (address: string) => {
@@ -110,7 +125,7 @@ const App: React.FC = () => {
             padding: '8px',
             borderRadius: '5px'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🔗 Wallet Connected</div>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>🔗 Authenticated</div>
             <div style={{ fontSize: '11px', wordBreak: 'break-all' }}>
               {walletAddress && formatAddress(walletAddress)}
             </div>
@@ -137,7 +152,7 @@ const App: React.FC = () => {
             padding: '8px',
             borderRadius: '5px'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚠️ No Wallet Connected</div>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚠️ Not Authenticated</div>
             <button 
               onClick={connectWallet}
               style={{
@@ -150,7 +165,7 @@ const App: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              Connect Wallet
+              Authenticate
             </button>
           </div>
         )}

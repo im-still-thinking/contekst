@@ -1,29 +1,41 @@
 'use client';
 
-import { useState } from 'react';
-import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mainnet, polygon, optimism, arbitrum, base } from 'wagmi/chains';
+import { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi';
 import { SignInButton } from '../components/SignInButton';
-import { AuthProvider, useAuthContext } from '../providers/AuthProvider';
-import '@rainbow-me/rainbowkit/styles.css';
-
-const config = getDefaultConfig({
-  appName: 'Contekst',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
-  chains: [mainnet, polygon, optimism, arbitrum, base],
-  ssr: false,
-});
-
-const queryClient = new QueryClient();
+import { checkAuthStatus, logoutUser } from '../../lib/api';
 
 function AuthContent() {
-  const { isAuthenticated, user, signOut } = useAuthContext();
+  const { address, isConnected } = useAccount();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!isConnected) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const authStatus = await checkAuthStatus();
+        setIsAuthenticated(authStatus);
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [isConnected, address]);
 
   const handleSignInSuccess = () => {
     setError(null);
+    setIsAuthenticated(true);
     console.log('Authentication successful!');
   };
 
@@ -31,9 +43,14 @@ function AuthContent() {
     setError(errorMessage);
   };
 
-  const handleSignOut = () => {
-    signOut();
-    setError(null);
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+      setIsAuthenticated(false);
+      setError(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -66,7 +83,7 @@ function AuthContent() {
             className="w-full"
           />
 
-          {isAuthenticated && user && (
+          {isAuthenticated && address && (
             <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center mb-3">
                 <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -76,7 +93,7 @@ function AuthContent() {
               </div>
               <div className="text-sm text-green-700 mb-3">
                 <p className="font-medium">Connected Address:</p>
-                <p className="font-mono text-xs break-all">{user.address}</p>
+                <p className="font-mono text-xs break-all">{address}</p>
               </div>
               <button
                 onClick={handleSignOut}
@@ -99,15 +116,5 @@ function AuthContent() {
 }
 
 export default function AuthPage() {
-  return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <AuthProvider>
-            <AuthContent />
-          </AuthProvider>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
-  );
+  return <AuthContent />;
 }

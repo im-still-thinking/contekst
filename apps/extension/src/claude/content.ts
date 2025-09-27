@@ -252,14 +252,71 @@ function setInputValue(inputElement: HTMLElement, text: string): void {
 // Backend API configuration
 const API_BASE_URL = 'http://localhost:3000';
 
+// Check if user is authenticated
+async function isAuthenticated(): Promise<boolean> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['accessToken'], (result) => {
+      resolve(!!result.accessToken);
+    });
+  });
+}
+
+// Get access token
+async function getAccessToken(): Promise<string | null> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['accessToken'], (result) => {
+      resolve(result.accessToken || null);
+    });
+  });
+}
+
+// Show auth required notification
+function showAuthRequiredNotification(): void {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 10000;
+    max-width: 300px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  `;
+  
+  notification.innerHTML = `
+    <div style="font-weight: 600; margin-bottom: 4px;">Authentication Required</div>
+    <div style="font-size: 12px;">Please authenticate in the extension popup to use Contekst features.</div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 5000);
+}
+
 // Function to save prompt to backend
 async function savePromptToBackend(prompt: string): Promise<void> {
   try {
     console.log('Saving Claude prompt to backend:', prompt);
     
-    const response = await fetch(`${API_BASE_URL}/api/save-memory`, {
+    const token = await getAccessToken();
+    if (!token) {
+      console.log('No access token available, skipping save');
+      return;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/save-memory`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
@@ -285,9 +342,16 @@ async function fetchContextFromAPI(originalText: string): Promise<string> {
   try {
     console.log('Fetching context from backend for Claude prompt:', originalText);
     
-    const response = await fetch(`${API_BASE_URL}/api/list-memories`, {
+    const token = await getAccessToken();
+    if (!token) {
+      showAuthRequiredNotification();
+      throw new Error('Authentication required');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/list-memories`, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
@@ -297,6 +361,10 @@ async function fetchContextFromAPI(originalText: string): Promise<string> {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        showAuthRequiredNotification();
+        throw new Error('Authentication expired');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -705,6 +773,13 @@ function injectButton() {
   button.addEventListener('click', async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check authentication first
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      showAuthRequiredNotification();
+      return;
+    }
     
     const inputValue = getInputValue(inputElement);
     console.log('Original Claude Input Value:', inputValue);

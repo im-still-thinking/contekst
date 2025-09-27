@@ -1,10 +1,22 @@
 'use client';
 
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import { useAuthContext } from '../providers/AuthProvider';
+import { useAccount } from 'wagmi';
+import { logoutUser } from '../../lib/api';
+import { useRouter } from 'next/navigation';
 
 function DashboardContent() {
-  const { user, signOut } = useAuthContext();
+  const { address } = useAccount();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+      router.push('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,14 +28,14 @@ function DashboardContent() {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                {user?.address && (
+                {address && (
                   <span className="font-mono">
-                    {user.address.slice(0, 6)}...{user.address.slice(-4)}
+                    {address.slice(0, 6)}...{address.slice(-4)}
                   </span>
                 )}
               </div>
               <button
-                onClick={signOut}
+                onClick={handleSignOut}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Sign Out
@@ -49,22 +61,18 @@ function DashboardContent() {
                 You are successfully authenticated and can now access all features.
               </p>
               
-              {user && (
+              {address && (
                 <div className="bg-white rounded-lg shadow p-6 max-w-md mx-auto">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Authentication Details</h3>
                   <div className="space-y-3 text-sm">
                     <div>
                       <span className="font-medium text-gray-700">Address:</span>
-                      <p className="font-mono text-gray-600 break-all">{user.address}</p>
+                      <p className="font-mono text-gray-600 break-all">{address}</p>
                     </div>
-                    {user.signature && (
-                      <div>
-                        <span className="font-medium text-gray-700">Signature:</span>
-                        <p className="font-mono text-gray-600 break-all text-xs">
-                          {user.signature.slice(0, 20)}...{user.signature.slice(-20)}
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <span className="font-medium text-gray-700">Status:</span>
+                      <p className="text-green-600 font-medium">Authenticated via SIWE</p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,10 +1,23 @@
 import { Elysia, t } from 'elysia'
 import { getAuditTrailForUser, getAuditStats } from '../lib/audit'
+import { authMiddleware, getWalletFromContext } from '../lib/middleware'
 
 export const auditRoutes = new Elysia({ prefix: '/audit' })
+    .onBeforeHandle(async (context) => {
+        const result = await authMiddleware(context)
+        if (!result.success) {
+            context.set.status = 401
+            return { error: result.error }
+        }
+    })
     // Get audit trail for a user
-    .get('/trail/:walletId', async ({ params: { walletId }, query }) => {
+    .get('/trail', async ({ query, ...context }) => {
         const { limit } = query
+        const walletId = getWalletFromContext(context)
+        
+        if (!walletId) {
+            return { error: 'Authentication required' }
+        }
         
         try {
             const trail = await getAuditTrailForUser(
@@ -30,7 +43,13 @@ export const auditRoutes = new Elysia({ prefix: '/audit' })
     })
 
     // Get audit statistics for a user
-    .get('/stats/:walletId', async ({ params: { walletId } }) => {
+    .get('/stats', async ({ ...context }) => {
+        const walletId = getWalletFromContext(context)
+        
+        if (!walletId) {
+            return { error: 'Authentication required' }
+        }
+        
         try {
             const stats = await getAuditStats(walletId)
             

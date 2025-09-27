@@ -4,13 +4,22 @@ import { processMemory, retrieveRelevantMemories } from '../lib/memory'
 import { getJobStatus } from '../lib/redis'
 import { db } from '../lib/db'
 import { memories } from '../models/memory'
+import { authMiddleware, getWalletFromContext } from '../lib/middleware'
 
 export const memoryRoutes = new Elysia({ prefix: '/memory' })
-    .post('/process', async ({ body }) => {
-        const { userId, prompt, source, conversationThread, images } = body
+    .onBeforeHandle(async (context) => {
+        const result = await authMiddleware(context)
+        if (!result.success) {
+            context.set.status = 401
+            return { error: result.error }
+        }
+    })
+    .post('/process', async ({ body, ...context }) => {
+        const { prompt, source, conversationThread, images } = body
+        const userId = getWalletFromContext(context)
 
         if (!userId || !prompt || !source) {
-            return { error: 'Missing required fields: userId, prompt, source' }
+            return { error: 'Missing required fields: prompt, source' }
         }
 
         const result = await processMemory({
@@ -32,7 +41,6 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
         return result
     }, {
         body: t.Object({
-            userId: t.String(),
             prompt: t.String(),
             source: t.String(),
             conversationThread: t.Optional(t.String()),
@@ -53,11 +61,12 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
     })
 
     // Retrieve relevant memories
-    .post('/retrieve', async ({ body }) => {
-        const { userId, userPrompt, entity, source, conversationThread, limit } = body
+    .post('/retrieve', async ({ body, ...context }) => {
+        const { userPrompt, entity, source, conversationThread, limit } = body
+        const userId = getWalletFromContext(context)
 
         if (!userId || !userPrompt || !entity) {
-            return { error: 'Missing required fields: userId, userPrompt, entity' }
+            return { error: 'Missing required fields: userPrompt, entity' }
         }
 
         try {
@@ -84,7 +93,6 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
         }
     }, {
         body: t.Object({
-            userId: t.String(),
             userPrompt: t.String(),
             entity: t.String({ description: 'Entity making the request (claude, chatgpt, etc.)' }),
             source: t.Optional(t.String()), // Optional: filter to specific source
@@ -94,8 +102,13 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
     })
 
     // Get all memories for a user
-    .get('/list/:userId', async ({ params: { userId }, query }) => {
+    .get('/list', async ({ query, ...context }) => {
         const { source, limit, offset } = query
+        const userId = getWalletFromContext(context)
+        
+        if (!userId) {
+            return { error: 'Authentication required' }
+        }
         
         try {
             // Build where conditions
