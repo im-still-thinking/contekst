@@ -192,36 +192,93 @@ async function getAccessToken(): Promise<string | null> {
   });
 }
 
-// Show auth required notification
-function showAuthRequiredNotification(): void {
+// Show notification with different types
+function showNotification(type: 'auth' | 'error' | 'success', message: string, duration: number = 5000): void {
+  // Remove existing notifications first
+  const existingNotifications = document.querySelectorAll('[data-contekst-notification]');
+  existingNotifications.forEach(notification => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  });
+
   const notification = document.createElement('div');
+  notification.setAttribute('data-contekst-notification', 'true');
+  
+  let bgColor, borderColor, textColor, icon;
+  
+  switch (type) {
+    case 'auth':
+      bgColor = '#fee2e2';
+      borderColor = '#fca5a5';
+      textColor = '#dc2626';
+      icon = '🔐';
+      break;
+    case 'error':
+      bgColor = '#fef2f2';
+      borderColor = '#f87171';
+      textColor = '#dc2626';
+      icon = '❌';
+      break;
+    case 'success':
+      bgColor = '#f0fdf4';
+      borderColor = '#86efac';
+      textColor = '#16a34a';
+      icon = '✅';
+      break;
+  }
+  
   notification.style.cssText = `
     position: fixed;
     top: 20px;
     right: 20px;
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
-    color: #dc2626;
+    background: ${bgColor};
+    border: 1px solid ${borderColor};
+    color: ${textColor};
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
     z-index: 10000;
     max-width: 300px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
   `;
   
+  // Add CSS animation
+  if (!document.querySelector('#contekst-notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'contekst-notification-styles';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
   notification.innerHTML = `
-    <div style="font-weight: 600; margin-bottom: 4px;">Authentication Required</div>
-    <div style="font-size: 12px;">Please authenticate in the extension popup to use Contekst features.</div>
+    <div style="font-weight: 600; margin-bottom: 4px;">${icon} ${type === 'auth' ? 'Authentication Required' : type === 'error' ? 'Error' : 'Success'}</div>
+    <div style="font-size: 12px;">${message}</div>
   `;
   
   document.body.appendChild(notification);
   
   setTimeout(() => {
     if (notification.parentNode) {
-      notification.parentNode.removeChild(notification);
+      notification.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
     }
-  }, 5000);
+  }, duration);
+}
+
+// Show auth required notification
+function showAuthRequiredNotification(): void {
+  showNotification('auth', 'Please authenticate in the extension popup to use Contekst features.');
 }
 
 // Function to save prompt to backend
@@ -247,6 +304,13 @@ async function savePromptToBackend(prompt: string): Promise<void> {
       }),
     });
 
+    if (response.status === 401) {
+      // Clear invalid tokens
+      chrome.storage.local.remove(['accessToken', 'refreshToken', 'walletAddress', 'walletConnected']);
+      console.log('Authentication expired, tokens cleared');
+      return;
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -255,7 +319,7 @@ async function savePromptToBackend(prompt: string): Promise<void> {
     console.log('Prompt saved successfully:', result);
   } catch (error) {
     console.error('Error saving prompt to backend:', error);
-    throw error;
+    // Don't throw error for background saves to avoid disrupting user flow
   }
 }
 
@@ -282,11 +346,14 @@ async function fetchContextFromAPI(originalText: string): Promise<string> {
       }),
     });
 
+    if (response.status === 401) {
+      // Clear invalid tokens
+      chrome.storage.local.remove(['accessToken', 'refreshToken', 'walletAddress', 'walletConnected']);
+      showAuthRequiredNotification();
+      throw new Error('Authentication expired');
+    }
+
     if (!response.ok) {
-      if (response.status === 401) {
-        showAuthRequiredNotification();
-        throw new Error('Authentication expired');
-      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -591,6 +658,13 @@ function injectButton() {
       button.style.borderColor = '#22c55e';
       button.style.color = '#15803d';
       
+      const contextLines = enhancedText.split('\n').filter(line => line.startsWith('- ')).length;
+      if (contextLines > 0) {
+        showNotification('success', `Added ${contextLines} relevant context item${contextLines > 1 ? 's' : ''} to your message.`, 3000);
+      } else {
+        showNotification('success', 'No additional context found for this query.', 3000);
+      }
+      
       console.log(`Context added: "${enhancedText}"`);
       
     } catch (error) {
@@ -599,18 +673,20 @@ function injectButton() {
       // Hide loading state
       hideLoadingState(inputElement);
       
-      // Error feedback
+      // Error feedback with notification
       const errorMessage = (error as Error).message;
       if (errorMessage.includes('Authentication')) {
         button.innerHTML = '🔒 Auth Required';
         button.style.background = '#fef3c7';
         button.style.borderColor = '#f59e0b';
         button.style.color = '#92400e';
+        showNotification('auth', 'Please reconnect your wallet in the extension popup.');
       } else {
         button.innerHTML = '❌ Error';
         button.style.background = '#fef2f2';
         button.style.borderColor = '#f87171';
         button.style.color = '#dc2626';
+        showNotification('error', `Failed to fetch context: ${errorMessage}`);
       }
     } finally {
       // Reset button after a delay

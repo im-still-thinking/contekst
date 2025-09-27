@@ -25,7 +25,10 @@ export function clearAuthTokens(): void {
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const token = await getAuthToken();
   
-  return fetch(`${API_BASE}/api/v1${endpoint}`, {
+  // Determine the correct API path based on the endpoint
+  const apiPath = endpoint.startsWith('/') ? endpoint : `/api/v1${endpoint}`;
+  
+  return fetch(`${API_BASE}${apiPath}`, {
     ...options,
     headers: {
       'Authorization': token ? `Bearer ${token}` : '',
@@ -48,11 +51,46 @@ export async function checkAuthStatus(): Promise<boolean> {
       },
     });
 
+    if (response.status === 401) {
+      // Token expired or invalid, clear stored tokens
+      clearAuthTokens();
+      return false;
+    }
+
     return response.ok;
   } catch (error) {
     console.error('Error checking auth status:', error);
     return false;
   }
+}
+
+// Enhanced API call with automatic retry on auth failure
+export async function authenticatedApiCall(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getAuthToken();
+  
+  if (!token) {
+    throw new Error('No authentication token available');
+  }
+
+  // Determine the correct API path based on the endpoint
+  const apiPath = endpoint.startsWith('/') ? endpoint : `/api/v1${endpoint}`;
+  
+  const response = await fetch(`${API_BASE}${apiPath}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  // If token is invalid/expired, clear tokens and throw specific error
+  if (response.status === 401) {
+    clearAuthTokens();
+    throw new Error('Authentication expired. Please reconnect your wallet.');
+  }
+
+  return response;
 }
 
 // Convenience methods

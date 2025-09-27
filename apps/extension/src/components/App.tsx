@@ -17,10 +17,31 @@ const App: React.FC = () => {
     });
 
     // Check for existing wallet connection and authentication
-    chrome.storage.local.get(['walletAddress', 'walletConnected', 'accessToken'], (result) => {
+    chrome.storage.local.get(['walletAddress', 'walletConnected', 'accessToken'], async (result) => {
       if (result.walletConnected && result.walletAddress && result.accessToken) {
-        setWalletAddress(result.walletAddress);
-        setIsWalletConnected(true);
+        // Verify token is still valid by checking backend
+        try {
+          const response = await fetch('http://localhost:3000/api/me', {
+            headers: {
+              'Authorization': `Bearer ${result.accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            setWalletAddress(result.walletAddress);
+            setIsWalletConnected(true);
+          } else {
+            // Token is invalid, clear storage
+            console.log('Stored token is invalid, clearing authentication data');
+            chrome.storage.local.remove(['walletAddress', 'walletConnected', 'accessToken', 'refreshToken', 'connectedAt']);
+          }
+        } catch (error) {
+          console.error('Error validating stored token:', error);
+          // Network error - keep the stored state but don't auto-clear
+          setWalletAddress(result.walletAddress);
+          setIsWalletConnected(true);
+        }
       }
     });
 
@@ -37,18 +58,39 @@ const App: React.FC = () => {
   };
 
   const connectWallet = () => {
-    // Open wallet connection page in new window (not tab) so we can communicate via postMessage
-    const walletWindow = window.open('http://localhost:3001/wallet', '_blank', 'width=500,height=600');
+    // Generate a unique session ID for this auth attempt
+    const sessionId = `auth_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    
+    // Create wallet window URL with session tracking
+    const walletUrl = `http://localhost:3001/wallet?sessionId=${sessionId}&origin=extension`;
+    const walletWindow = window.open(walletUrl, '_blank', 'width=500,height=600,scrollbars=yes,resizable=yes');
     
     if (!walletWindow) {
       console.error('Could not open wallet window - popup might be blocked');
+      alert('Please allow popups for this extension to authenticate with your wallet.');
       return;
     }
 
+    // Set up robust message handling with timeout
+    let authTimeout: NodeJS.Timeout;
+    let windowCheckInterval: NodeJS.Timeout;
+    
+    const cleanup = () => {
+      window.removeEventListener('message', handleMessage);
+      if (authTimeout) clearTimeout(authTimeout);
+      if (windowCheckInterval) clearInterval(windowCheckInterval);
+    };
+
     // Listen for messages from the wallet window
     const handleMessage = (event: MessageEvent) => {
-      // Verify the message is from our wallet page
-      if (event.origin !== 'http://localhost:3001') {
+      // Be more permissive with origin to handle localhost variations
+      const allowedOrigins = ['http://localhost:3001', 'http://127.0.0.1:3001'];
+      if (!allowedOrigins.includes(event.origin)) {
+        return;
+      }
+
+      // Verify this message is for our session
+      if (event.data.sessionId && event.data.sessionId !== sessionId) {
         return;
       }
 
@@ -58,17 +100,19 @@ const App: React.FC = () => {
         setWalletAddress(event.data.address);
         setIsWalletConnected(true);
         
-        // Store authentication data in chrome storage
+        // Store authentication data in chrome storage with callback
         chrome.storage.local.set({
           walletAddress: event.data.address,
           walletConnected: true,
           accessToken: event.data.accessToken,
-          refreshToken: event.data.refreshToken,
-          connectedAt: event.data.timestamp
+          refreshToken: event.data.refreshToken || null,
+          connectedAt: event.data.timestamp || Date.now(),
+          sessionId: sessionId
+        }, () => {
+          console.log('Authentication data saved to chrome storage');
         });
 
-        // Clean up the message listener
-        window.removeEventListener('message', handleMessage);
+        cleanup();
         
         // Close the wallet window if it's still open
         if (!walletWindow.closed) {
@@ -77,24 +121,35 @@ const App: React.FC = () => {
       } else if (event.data.type === 'AUTH_ERROR') {
         console.error('Authentication failed:', event.data.error);
         
-        // Clean up the message listener
-        window.removeEventListener('message', handleMessage);
+        cleanup();
         
-        // Optionally show error to user
-        alert('Authentication failed: ' + event.data.error);
+        // Show user-friendly error message
+        alert(`Authentication failed: ${event.data.error || 'Unknown error occurred'}`);
+      } else if (event.data.type === 'AUTH_READY') {
+        console.log('Wallet window is ready for authentication');
       }
     };
 
     // Add the message listener
     window.addEventListener('message', handleMessage);
 
-    // Clean up listener if window is closed manually
-    const checkClosed = setInterval(() => {
-      if (walletWindow.closed) {
-        window.removeEventListener('message', handleMessage);
-        clearInterval(checkClosed);
+    // Set up timeout for authentication (2 minutes)
+    authTimeout = setTimeout(() => {
+      cleanup();
+      if (!walletWindow.closed) {
+        walletWindow.close();
       }
-    }, 1000);
+      console.error('Authentication timeout');
+      alert('Authentication timed out. Please try again.');
+    }, 120000);
+
+    // Check if window is closed manually with better frequency
+    windowCheckInterval = setInterval(() => {
+      if (walletWindow.closed) {
+        cleanup();
+        console.log('Wallet window was closed manually');
+      }
+    }, 500);
   };
 
   const disconnectWallet = () => {
