@@ -8,11 +8,12 @@ import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../l
 import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
+import { uploadImageToWalrus } from './walrus'
 import { config } from './config'
 
 interface ImageData {
   base64: string
-  identifier: string
+  filename?: string // Optional filename for Walrus upload
 }
 
 interface ProcessMemoryRequest {
@@ -54,9 +55,26 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
     const { userId, prompt, source, conversationThread, images } = request
 
     console.log(`🚀 Background job ${jobId} started`)
+    
+    // Upload images to Walrus first if provided
+    let uploadedImages: { identifier: string; base64: string }[] = []
+    if (images && images.length > 0) {
+      await setJobStatus(jobId, 'processing', { step: 'uploading_images_to_walrus' })
+      
+      uploadedImages = await Promise.all(
+        images.map(async (image) => {
+          const blobId = await uploadImageToWalrus(image.base64, image.filename)
+          return {
+            identifier: blobId,
+            base64: image.base64 // Keep for AI processing
+          }
+        })
+      )
+    }
+
     await setJobStatus(jobId, 'processing', { step: 'extracting_memory_with_context' })
 
-    const extractedMemory = await extractMemoryWithImages(prompt, images)
+    const extractedMemory = await extractMemoryWithImages(prompt, uploadedImages)
     if (!extractedMemory.trim()) {
       console.error(`❌ Job ${jobId}: No memory extracted`)
       await setJobStatus(jobId, 'failed', { error: 'No memory extracted from prompt and images' })
@@ -80,7 +98,7 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       extractedMemory,
       tags,
       conversationThread,
-      imageIdentifiers: images?.map(img => img.identifier)
+      imageIdentifiers: uploadedImages.map(img => img.identifier)
     })
 
     // Store memory in database
@@ -95,16 +113,16 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       blockchainFingerprint
     })
 
-    // Store images if provided
-    if (images && images.length > 0) {
-      await setJobStatus(jobId, 'processing', { step: 'storing_images' })
+    // Store image references if provided
+    if (uploadedImages.length > 0) {
+      await setJobStatus(jobId, 'processing', { step: 'storing_image_references' })
       
-      const imageRecords = images.map((image) => ({
+      const imageRecords = uploadedImages.map((image) => ({
         id: nanoid(),
         memoryId,
         userId,
-        identifier: image.identifier,
-        base64: image.base64,
+        identifier: image.identifier, // This is now the Walrus blobId
+        base64: image.base64, // Keep for AI processing/caching
       }))
 
       await db.insert(memoryImages).values(imageRecords)

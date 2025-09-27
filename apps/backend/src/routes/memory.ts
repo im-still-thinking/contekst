@@ -4,6 +4,7 @@ import { processMemory, retrieveRelevantMemories } from '../lib/memory'
 import { getJobStatus } from '../lib/redis'
 import { db } from '../lib/db'
 import { memories } from '../models/memory'
+import { downloadImageFromWalrus } from '../lib/walrus'
 import { authMiddleware, getWalletFromContext } from '../lib/middleware'
 
 export const memoryRoutes = new Elysia({ prefix: '/memory' })
@@ -46,7 +47,7 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
             conversationThread: t.Optional(t.String()),
             images: t.Optional(t.Array(t.Object({
                 base64: t.String(),
-                identifier: t.String()
+                filename: t.Optional(t.String())
             })))
         })
     })
@@ -155,4 +156,20 @@ export const memoryRoutes = new Elysia({ prefix: '/memory' })
             limit: t.Optional(t.String()),
             offset: t.Optional(t.String())
         })
+    })
+
+    // Get image from Walrus
+    .get('/image/:blobId', async ({ params: { blobId }, set }) => {
+        try {
+            const imageBuffer = await downloadImageFromWalrus(blobId)
+            
+            set.headers['Content-Type'] = 'image/jpeg'
+            set.headers['Cache-Control'] = 'public, max-age=31536000'
+            
+            return new Response(imageBuffer)
+        } catch (error) {
+            console.error('Image retrieval failed:', error)
+            set.status = 404
+            return { error: 'Image not found' }
+        }
     })

@@ -11,4 +11,8 @@ export const config = {
   LEASE_CONTRACT_ADDRESS: process.env.LEASE_CONTRACT_ADDRESS,
   BLOCKCHAIN_PRIVATE_KEY: process.env.BLOCKCHAIN_PRIVATE_KEY,
   JWT_SECRET: process.env.JWT_SECRET,
+  // Walrus configuration
+  WALRUS_PRIVATE_KEY: process.env.WALRUS_PRIVATE_KEY!,
+  WALRUS_NETWORK: process.env.WALRUS_NETWORK || 'testnet',
+  WALRUS_STORAGE_EPOCHS: parseInt(process.env.WALRUS_STORAGE_EPOCHS || '3'),
 }
