@@ -4,7 +4,7 @@ import { eq, inArray } from 'drizzle-orm'
 import { db } from './db'
 import { memories, memoryEmbeddings, memoryImages } from '../models/memory'
 import { extractMemoryWithImages, generateMemoryTags, generateEmbedding } from '../lib/ai'
-import { storeEmbedding, type MemoryMetadata } from '../lib/qdrant'
+import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../lib/qdrant'
 import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
@@ -55,8 +55,7 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
 
     console.log(`🚀 Background job ${jobId} started`)
     await setJobStatus(jobId, 'processing', { step: 'extracting_memory_with_context' })
-  
-    // Extract memory considering both text and images together for more relevant context
+
     const extractedMemory = await extractMemoryWithImages(prompt, images)
     if (!extractedMemory.trim()) {
       console.error(`❌ Job ${jobId}: No memory extracted`)
@@ -250,7 +249,6 @@ export async function retrieveRelevantMemories(
       // Join with images
       imageId: memoryImages.id,
       imageIdentifier: memoryImages.identifier,
-      imageSummary: memoryImages.summary,
     })
       .from(memories)
       .leftJoin(memoryImages, eq(memories.id, memoryImages.memoryId))
@@ -280,8 +278,7 @@ export async function retrieveRelevantMemories(
       if (row.imageId) {
         memoryMap.get(row.id).images.push({
           id: row.imageId,
-          identifier: row.imageIdentifier,
-          summary: row.imageSummary
+          identifier: row.imageIdentifier
         })
       }
     }
@@ -325,3 +322,4 @@ export async function retrieveRelevantMemories(
     console.error('Memory retrieval failed:', error)
     throw error
   }
+}
