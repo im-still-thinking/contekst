@@ -1,0 +1,269 @@
+{
+	"id": "fa3b642ddab2a4df0833419a60c3399a",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.28",
+	"solcLongVersion": "0.8.28+commit.7893614a",
+	"input": {
+		"language": "Solidity",
+		"settings": {
+			"optimizer": {
+				"enabled": true,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			},
+			"remappings": []
+		},
+		"sources": {
+			"contracts/IDomainRegistry.sol": {
+				"content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.28;\r\n\r\n/**\r\n * @title IDomainRegistry\r\n * @dev Interface for the DomainRegistry contract to enable secure contract-to-contract communication\r\n */\r\ninterface IDomainRegistry {\r\n    /**\r\n     * @dev Returns the official wallet address for a given domain name\r\n     * @param domainName The domain name to look up (e.g., \"chatgpt.com\")\r\n     * @return The official wallet address associated with the domain\r\n     */\r\n    function getDomainAddress(string memory domainName) external view returns (address);\r\n}\r\n"
+			}
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/IDomainRegistry.sol": {
+				"IDomainRegistry": {
+					"abi": [
+						{
+							"inputs": [
+								{
+									"internalType": "string",
+									"name": "domainName",
+									"type": "string"
+								}
+							],
+							"name": "getDomainAddress",
+							"outputs": [
+								{
+									"internalType": "address",
+									"name": "",
+									"type": "address"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"details": "Interface for the DomainRegistry contract to enable secure contract-to-contract communication",
+						"kind": "dev",
+						"methods": {
+							"getDomainAddress(string)": {
+								"details": "Returns the official wallet address for a given domain name",
+								"params": {
+									"domainName": "The domain name to look up (e.g., \"chatgpt.com\")"
+								},
+								"returns": {
+									"_0": "The official wallet address associated with the domain"
+								}
+							}
+						},
+						"title": "IDomainRegistry",
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"getDomainAddress(string)": "94310e51"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"domainName\",\"type\":\"string\"}],\"name\":\"getDomainAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Interface for the DomainRegistry contract to enable secure contract-to-contract communication\",\"kind\":\"dev\",\"methods\":{\"getDomainAddress(string)\":{\"details\":\"Returns the official wallet address for a given domain name\",\"params\":{\"domainName\":\"The domain name to look up (e.g., \\\"chatgpt.com\\\")\"},\"returns\":{\"_0\":\"The official wallet address associated with the domain\"}}},\"title\":\"IDomainRegistry\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/IDomainRegistry.sol\":\"IDomainRegistry\"},\"evmVersion\":\"cancun\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/IDomainRegistry.sol\":{\"keccak256\":\"0x2dc9516d2ae6d4ebc69a9cefc6d5c56b56bd05f7077d0af0e4642b7ca8879ab9\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://2e80f2ab6039ca328cca0f2718e379e13f232e9970406d07e2bf916ffe58e65e\",\"dweb:/ipfs/QmXw9mt8tnE2yzE36bGf6d62WZ5ds4hCUL1Dpv5reksRKf\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/IDomainRegistry.sol": {
+				"ast": {
+					"absolutePath": "contracts/IDomainRegistry.sol",
+					"exportedSymbols": {
+						"IDomainRegistry": [
+							11
+						]
+					},
+					"id": 12,
+					"license": "MIT",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".28"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "33:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IDomainRegistry",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"documentation": {
+								"id": 2,
+								"nodeType": "StructuredDocumentation",
+								"src": "61:138:0",
+								"text": " @title IDomainRegistry\n @dev Interface for the DomainRegistry contract to enable secure contract-to-contract communication"
+							},
+							"fullyImplemented": false,
+							"id": 11,
+							"linearizedBaseContracts": [
+								11
+							],
+							"name": "IDomainRegistry",
+							"nameLocation": "211:15:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"documentation": {
+										"id": 3,
+										"nodeType": "StructuredDocumentation",
+										"src": "234:231:0",
+										"text": " @dev Returns the official wallet address for a given domain name\n @param domainName The domain name to look up (e.g., \"chatgpt.com\")\n @return The official wallet address associated with the domain"
+									},
+									"functionSelector": "94310e51",
+									"id": 10,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "getDomainAddress",
+									"nameLocation": "480:16:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 6,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 5,
+												"mutability": "mutable",
+												"name": "domainName",
+												"nameLocation": "511:10:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 10,
+												"src": "497:24:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 4,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "497:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "496:26:0"
+									},
+									"returnParameters": {
+										"id": 9,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 8,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 10,
+												"src": "546:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 7,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "546:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "545:9:0"
+									},
+									"scope": 11,
+									"src": "471:84:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 12,
+							"src": "201:357:0",
+							"usedErrors": [],
+							"usedEvents": []
+						}
+					],
+					"src": "33:527:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

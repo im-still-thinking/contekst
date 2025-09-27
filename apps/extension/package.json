@@ -1,13 +1,35 @@
 {
   "name": "@contekst/extension",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "A Chrome extension that adds context enhancement to ChatGPT and Claude",
+  "main": "index.js",
   "scripts": {
-    "dev": "echo 'Extension dev not configured yet'",
-    "build": "echo 'Extension build not configured yet'",
-    "clean": "rm -rf dist node_modules/.cache"
+    "build": "webpack --mode=production",
+    "dev": "webpack --mode=development",
+    "watch": "webpack --mode=development --watch"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "zod": "^4.1.11"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.9",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.4",
+    "style-loader": "^4.0.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   }
 }
+
