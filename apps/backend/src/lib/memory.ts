@@ -8,6 +8,7 @@ import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../l
 import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
+import { config } from './config'
 
 interface ImageData {
   base64: string
@@ -205,13 +206,18 @@ export async function retrieveRelevantMemories(
       limit
     )
 
-    if (searchResults.length === 0) {
+    // Filter results by similarity threshold
+    const filteredResults = searchResults.filter((result: any) => result.score >= config.MEMORY_SIMILARITY_THRESHOLD)
+    
+    console.log(`🔍 Similarity filtering: ${searchResults.length} found → ${filteredResults.length} above threshold (${config.MEMORY_SIMILARITY_THRESHOLD})`)
+
+    if (filteredResults.length === 0) {
       await recordAuditTrail({
         walletId: userId,
         leaseId: lease.id,
         entity,
         action: 'access_granted',
-        reason: 'No matching memories found',
+        reason: `No memories found above similarity threshold (${config.MEMORY_SIMILARITY_THRESHOLD})`,
         userPrompt,
         source: effectiveSource,
         accessedMemories: []
@@ -220,7 +226,7 @@ export async function retrieveRelevantMemories(
     }
 
     // STEP 6: Retrieve and process memories
-    const qdrantIds = searchResults.map((result: any) => String(result.id))
+    const qdrantIds = filteredResults.map((result: any) => String(result.id))
 
     const embeddingMappings = await db.select({
       memoryId: memoryEmbeddings.memoryId,
@@ -269,7 +275,7 @@ export async function retrieveRelevantMemories(
     for (const row of retrievedMemories) {
       if (!memoryMap.has(row.id)) {
         const qdrantMapping = embeddingMappings.find(m => m.memoryId === row.id)
-        const searchResult = searchResults.find((r: any) => String(r.id) === qdrantMapping?.qdrantId)
+        const searchResult = filteredResults.find((r: any) => String(r.id) === qdrantMapping?.qdrantId)
 
         memoryMap.set(row.id, {
           id: row.id,
