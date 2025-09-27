@@ -1,82 +1,76 @@
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client'
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519'
-import { WalrusClient, WalrusFile } from '@mysten/walrus'
 import { config } from './config'
 
-let walrusClient: WalrusClient | null = null
-let serverKeypair: Ed25519Keypair | null = null
-
-// Initialize Walrus client and server keypair
-function initializeWalrus() {
-  if (!walrusClient || !serverKeypair) {
-    // Create SUI client
-    const suiClient = new SuiClient({
-      url: getFullnodeUrl(config.WALRUS_NETWORK as 'testnet' | 'mainnet'),
-    })
-
-    // Create server keypair from private key
-    let privateKeyBytes: Uint8Array
-    
-    if (config.WALRUS_PRIVATE_KEY.startsWith('0x')) {
-      // Hex format
-      privateKeyBytes = Buffer.from(config.WALRUS_PRIVATE_KEY.slice(2), 'hex')
-    } else {
-      // Base64 or raw hex format
-      try {
-        privateKeyBytes = Buffer.from(config.WALRUS_PRIVATE_KEY, 'base64')
-      } catch {
-        privateKeyBytes = Buffer.from(config.WALRUS_PRIVATE_KEY, 'hex')
-      }
-    }
-    
-    serverKeypair = Ed25519Keypair.fromSecretKey(privateKeyBytes)
-
-    // Create Walrus client
-    walrusClient = new WalrusClient({
-      network: config.WALRUS_NETWORK as 'testnet' | 'mainnet',
-      suiClient,
-    })
-
-    console.log('🐋 Walrus client initialized')
-    console.log('📍 Server wallet address:', serverKeypair.getPublicKey().toSuiAddress())
+// Walrus HTTP API endpoints
+const WALRUS_ENDPOINTS = {
+  testnet: {
+    publisher: 'https://walrus-testnet-publisher.nodes.guru',
+    aggregator: 'https://aggregator.walrus-testnet.walrus.space'
+  },
+  mainnet: {
+    publisher: 'https://publisher.walrus-mainnet.walrus.space',
+    aggregator: 'https://aggregator.walrus-mainnet.walrus.space'
   }
+}
 
-  return { walrusClient: walrusClient!, serverKeypair: serverKeypair! }
+function getWalrusEndpoints() {
+  const network = config.WALRUS_NETWORK as 'testnet' | 'mainnet'
+  return WALRUS_ENDPOINTS[network] || WALRUS_ENDPOINTS.testnet
 }
 
 export async function uploadImageToWalrus(base64: string, filename?: string): Promise<string> {
   try {
-    const { walrusClient, serverKeypair } = initializeWalrus()
-
+    const endpoints = getWalrusEndpoints()
+    
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(base64, 'base64')
-
-    // Create WalrusFile
-    const file = WalrusFile.from({
-      contents: imageBuffer,
-      identifier: filename || `image_${Date.now()}.jpg`,
-    })
-
+    
     console.log(`🔄 Uploading image to Walrus (${imageBuffer.length} bytes)...`)
 
-    // Upload to Walrus
-    const results = await walrusClient.writeFiles({
-      files: [file],
-      epochs: config.WALRUS_STORAGE_EPOCHS,
-      deletable: true,
-      signer: serverKeypair,
+    // Upload to Walrus using HTTP API
+    const response = await fetch(`${endpoints.publisher}/v1/blobs?epochs=${config.WALRUS_STORAGE_EPOCHS}&deletable=true`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+      },
+      body: imageBuffer,
     })
 
-    if (!results || results.length === 0) {
-      throw new Error('No results returned from Walrus upload')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const result = results[0]
-    if (!result) {
-      throw new Error('Invalid result from Walrus upload')
+    const result = await response.json() as {
+      newlyCreated?: {
+        blobObject?: {
+          blobId: string
+        }
+        blobId?: string
+      }
+      alreadyCertified?: {
+        blobObject?: {
+          blobId: string
+        }
+        blobId?: string
+      }
     }
-
-    const blobId = result.blobId
+    
+    // Extract blobId from various possible locations in the response
+    let blobId: string | undefined
+    
+    if (result.newlyCreated?.blobObject?.blobId) {
+      blobId = result.newlyCreated.blobObject.blobId
+    } else if (result.newlyCreated?.blobId) {
+      blobId = result.newlyCreated.blobId
+    } else if (result.alreadyCertified?.blobObject?.blobId) {
+      blobId = result.alreadyCertified.blobObject.blobId
+    } else if (result.alreadyCertified?.blobId) {
+      blobId = result.alreadyCertified.blobId
+    }
+    
+    if (!blobId) {
+      console.error('❌ Full response structure:', JSON.stringify(result, null, 2))
+      throw new Error('No blobId returned from Walrus upload')
+    }
     console.log(`✅ Image uploaded to Walrus: ${blobId}`)
     
     return blobId
@@ -88,15 +82,23 @@ export async function uploadImageToWalrus(base64: string, filename?: string): Pr
 
 export async function downloadImageFromWalrus(blobId: string): Promise<Buffer> {
   try {
-    const { walrusClient } = initializeWalrus()
+    const endpoints = getWalrusEndpoints()
 
     console.log(`🔄 Downloading image from Walrus: ${blobId}`)
 
-    const blob = await walrusClient.readBlob({ blobId })
+    // Download from Walrus using HTTP API
+    const response = await fetch(`${endpoints.aggregator}/v1/blobs/${blobId}`)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
     
     console.log(`✅ Image downloaded from Walrus: ${blobId}`)
     
-    return Buffer.from(blob)
+    return buffer
   } catch (error) {
     console.error('❌ Failed to download image from Walrus:', error)
     throw new Error(`Walrus download failed: ${error instanceof Error ? error.message : 'Unknown error'}`)

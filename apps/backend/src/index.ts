@@ -16,7 +16,7 @@ initializeCollection().then(() => {
 
 const app = new Elysia()
     .use(cors({
-      origin: "http://localhost:3001",
+      origin: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']
     }))
