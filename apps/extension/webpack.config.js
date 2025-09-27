@@ -6,8 +6,7 @@ module.exports = {
   entry: {
     popup: './src/popup.tsx',
     'chatgpt-content': './src/chatgpt/content.ts',
-    'claude-content': './src/claude/content.ts',
-    background: './src/background.ts'
+    'claude-content': './src/claude/content.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

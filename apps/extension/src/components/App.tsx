@@ -24,29 +24,8 @@ const App: React.FC = () => {
       }
     });
 
-    // Listen for messages from wallet connection page
-    const handleMessage = (message: any) => {
-      if (message.type === 'WALLET_CONNECTED') {
-        setWalletAddress(message.address);
-        setIsWalletConnected(true);
-        // Store in chrome storage
-        chrome.storage.local.set({
-          walletAddress: message.address,
-          walletConnected: true,
-          connectedAt: message.timestamp
-        });
-      }
-    };
-
-    chrome.runtime.onMessage.addListener(handleMessage);
-    
-    // Also listen for postMessage from opened window
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
-      window.removeEventListener('message', handleMessage);
-    };
+    // No longer need chrome.runtime message handling since we removed background script
+    // The connectWallet function now handles postMessage communication directly
   }, []);
 
   const openChatGPT = () => {
@@ -58,11 +37,49 @@ const App: React.FC = () => {
   };
 
   const connectWallet = () => {
-    // Open wallet connection page in new tab
-    chrome.tabs.create({ 
-      url: 'http://localhost:3001/wallet',
-      active: true 
-    });
+    // Open wallet connection page in new window (not tab) so we can communicate via postMessage
+    const walletWindow = window.open('http://localhost:3001/wallet', '_blank', 'width=500,height=600');
+    
+    if (!walletWindow) {
+      console.error('Could not open wallet window - popup might be blocked');
+      return;
+    }
+
+    // Listen for messages from the wallet window
+    const handleMessage = (event: MessageEvent) => {
+      // Verify the message is from our wallet page
+      if (event.origin !== 'http://localhost:3001') {
+        return;
+      }
+
+      if (event.data.type === 'WALLET_CONNECTED') {
+        console.log('Received wallet connection:', event.data);
+        
+        setWalletAddress(event.data.address);
+        setIsWalletConnected(true);
+        
+        // Store in chrome storage
+        chrome.storage.local.set({
+          walletAddress: event.data.address,
+          walletConnected: true,
+          connectedAt: event.data.timestamp
+        });
+
+        // Clean up the message listener
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+
+    // Add the message listener
+    window.addEventListener('message', handleMessage);
+
+    // Clean up listener if window is closed manually
+    const checkClosed = setInterval(() => {
+      if (walletWindow.closed) {
+        window.removeEventListener('message', handleMessage);
+        clearInterval(checkClosed);
+      }
+    }, 1000);
   };
 
   const disconnectWallet = () => {
