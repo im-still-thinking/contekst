@@ -1,0 +1,189 @@
+{
+	"compiler": {
+		"version": "0.8.28+commit.7893614a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "officialAddress",
+						"type": "address"
+					}
+				],
+				"name": "DomainRegistered",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "admin",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "domains",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "getDomainAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "isDomainRegistered",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "officialAddress",
+						"type": "address"
+					}
+				],
+				"name": "registerDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "A foundational contract that acts as a secure, on-chain directory for application domains. This contract solves the challenge of securely identifying application domains like \"chatgpt.com\" on-chain. A smart contract cannot trust a simple string name; it needs a cryptographic identity. This registry provides that by linking the human-readable domain name to a secure, official Hedera wallet address.",
+			"kind": "dev",
+			"methods": {
+				"constructor": {
+					"details": "Constructor sets the admin to the deployer"
+				},
+				"getDomainAddress(string)": {
+					"details": "Get the official wallet address for a given domain name",
+					"params": {
+						"domainName": "The domain name to look up"
+					},
+					"returns": {
+						"_0": "The official wallet address associated with the domain  This function allows the MemoryControl contract and any external party  to look up the official wallet address for a given domain name."
+					}
+				},
+				"isDomainRegistered(string)": {
+					"details": "Check if a domain is registered",
+					"params": {
+						"domainName": "The domain name to check"
+					},
+					"returns": {
+						"_0": "True if the domain is registered, false otherwise"
+					}
+				},
+				"registerDomain(string,address)": {
+					"details": "Register a new application domain to the registry",
+					"params": {
+						"domainName": "The human-readable domain name (e.g., \"chatgpt.com\")",
+						"officialAddress": "The official Hedera wallet address controlled by the application's owner  This is a one-time setup for each participating application (e.g., ChatGPT, Claude)  to establish their official on-chain identity."
+					}
+				}
+			},
+			"title": "DomainRegistry",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/DomainRegistry.sol": "DomainRegistry"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/DomainRegistry.sol": {
+			"keccak256": "0x48c75951f830b3c394266cc4dcddf1a9037f6b3bcc2de08f442b2a442a7cf558",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f330be7e7bb3992b0c8f46c2378a8c18bae7b0cba98d5d137f16598a54465891",
+				"dweb:/ipfs/QmbrH9pspJ3izwm8VYnsMRSdWnrcj7stGoaYM9uWAcNt5w"
+			]
+		}
+	},
+	"version": 1
+}

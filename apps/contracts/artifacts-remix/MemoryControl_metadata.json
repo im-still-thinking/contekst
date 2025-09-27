@@ -1,0 +1,471 @@
+{
+	"compiler": {
+		"version": "0.8.28+commit.7893614a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_domainRegistry",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "AccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "granteeDomain",
+						"type": "string"
+					}
+				],
+				"name": "AccessRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "sourceDomainName",
+						"type": "string"
+					}
+				],
+				"name": "MemoryAdded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "MemoryDeleted",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "accessList",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "metadataHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomainName",
+						"type": "string"
+					}
+				],
+				"name": "addMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "deleteMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "domainRegistry",
+				"outputs": [
+					{
+						"internalType": "contract IDomainRegistry",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "getMemory",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "owner",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "metadataHash",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "createdAt",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "sourceDomain",
+								"type": "address"
+							}
+						],
+						"internalType": "struct MemoryControl.Memory",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "grantAccessToDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "grantAccessToUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "hasAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "isMemoryExists",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"name": "memories",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "metadataHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "createdAt",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "sourceDomain",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "revokeAccessFromDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "grantee",
+						"type": "address"
+					}
+				],
+				"name": "revokeAccessFromUser",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "The main contract that users and applications will interact with to manage memory ownership,  permissions, and the audit trail. This contract uses a hybrid on-chain/off-chain storage model where only a cryptographic hash of the metadata is stored on-chain for cost efficiency and privacy.",
+			"kind": "dev",
+			"methods": {
+				"addMemory(bytes32,string)": {
+					"details": "Add a new memory to the system",
+					"params": {
+						"metadataHash": "The keccak256 hash of the full off-chain metadata (the \"digital fingerprint\")",
+						"sourceDomainName": "The domain name where this memory was created (e.g., \"chatgpt.com\")  This function is called by the application backend when a user creates a new memory. It automatically grants access to the source domain's official wallet address."
+					}
+				},
+				"constructor": {
+					"details": "Constructor sets the domain registry address",
+					"params": {
+						"_domainRegistry": "The address of the DomainRegistry contract"
+					}
+				},
+				"deleteMemory(bytes32)": {
+					"details": "Delete a memory from the system",
+					"params": {
+						"memoryId": "The unique memory ID (metadataHash) to delete  This function is called by a user to delete a memory they own."
+					}
+				},
+				"getMemory(bytes32)": {
+					"details": "Get memory information",
+					"params": {
+						"memoryId": "The unique memory ID to retrieve"
+					},
+					"returns": {
+						"_0": "The Memory struct containing all on-chain data"
+					}
+				},
+				"grantAccessToDomain(string)": {
+					"details": "Grant access to an application domain",
+					"params": {
+						"domainName": "The domain name to grant access to (e.g., \"claude.ai\")  This function allows a user to grant access to an application like \"claude.ai\"."
+					}
+				},
+				"grantAccessToUser(address)": {
+					"details": "Grant access to another user's wallet",
+					"params": {
+						"grantee": "The wallet address to grant access to  This function allows a user to grant access to another user's wallet."
+					}
+				},
+				"hasAccess(bytes32,address)": {
+					"details": "Check if a grantee has access to a memory",
+					"params": {
+						"grantee": "The wallet address to check access for",
+						"memoryId": "The unique memory ID to check access for"
+					},
+					"returns": {
+						"_0": "True if the grantee has access, false otherwise"
+					}
+				},
+				"isMemoryExists(bytes32)": {
+					"details": "Check if a memory exists",
+					"params": {
+						"memoryId": "The unique memory ID to check"
+					},
+					"returns": {
+						"_0": "True if the memory exists, false otherwise"
+					}
+				},
+				"revokeAccessFromDomain(string)": {
+					"details": "Revoke access from an application domain",
+					"params": {
+						"domainName": "The domain name to revoke access from  This function allows users to revoke permissions from applications at any time."
+					}
+				},
+				"revokeAccessFromUser(address)": {
+					"details": "Revoke access from another user's wallet",
+					"params": {
+						"grantee": "The wallet address to revoke access from  This function allows users to revoke permissions at any time."
+					}
+				}
+			},
+			"title": "MemoryControl",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/MemoryControl.sol": "MemoryControl"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/IDomainRegistry.sol": {
+			"keccak256": "0x2dc9516d2ae6d4ebc69a9cefc6d5c56b56bd05f7077d0af0e4642b7ca8879ab9",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://2e80f2ab6039ca328cca0f2718e379e13f232e9970406d07e2bf916ffe58e65e",
+				"dweb:/ipfs/QmXw9mt8tnE2yzE36bGf6d62WZ5ds4hCUL1Dpv5reksRKf"
+			]
+		},
+		"contracts/MemoryControl.sol": {
+			"keccak256": "0x78e7a7be5ea0f8f5a3489ee53111e7bb1e9ac758fc41c460f9070ec58aae2f19",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4237cd5cd477ab286e0bebc86baf0c6e7227579e5d322752c176549f726d259c",
+				"dweb:/ipfs/QmYAnGPbex5kA8TGGDPcCbiemy3FTnDoBQ175jDd8nQyCA"
+			]
+		}
+	},
+	"version": 1
+}
