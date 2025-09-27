@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MYSQL_URL=${MYSQL_URL}
+      - REDIS_URL=${REDIS_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - MEMORY_SIMILARITY_THRESHOLD=${MEMORY_SIMILARITY_THRESHOLD:-0.7}
+      - BLOCKCHAIN_RPC_URL=${BLOCKCHAIN_RPC_URL}
+      - MEMORY_CONTRACT_ADDRESS=${MEMORY_CONTRACT_ADDRESS}
+      - BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    # Using external services - no local dependencies
+    restart: unless-stopped
+    networks:
+      - contekst-network
+
+  # External services (MySQL, Redis, Qdrant) are configured via environment variables
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - contekst-network
+
+# No volumes needed for external services
+
+networks:
+  contekst-network:
+    driver: bridge
