@@ -11,42 +11,28 @@ export function WalletConnect() {
 
   useEffect(() => {
     if (isConnected && address) {
-      // Send wallet info back to extension
+      // Send message to the extension window that opened this tab
       const message = {
         type: 'WALLET_CONNECTED',
         address: address,
         timestamp: Date.now()
       };
 
-      // Store in localStorage as primary method
       try {
-        if (typeof (globalThis as any).window !== 'undefined') {
-          (globalThis as any).window.localStorage.setItem('walletAddress', address);
-          (globalThis as any).window.localStorage.setItem('walletConnected', 'true');
-          (globalThis as any).window.localStorage.setItem('walletMessage', JSON.stringify(message));
+        if (typeof globalThis !== 'undefined' && (globalThis as any).window?.opener) {
+          // Send message to the extension popup that opened this window
+          (globalThis as any).window.opener.postMessage(message, '*');
+          console.log('Wallet connected, sending message to extension:', message);
+          
+          // Close this window to return focus to extension
+          setTimeout(() => {
+            (globalThis as any).window.close();
+          }, 100);
+        } else {
+          console.log('No window.opener found - cannot send message to extension');
         }
       } catch (e) {
-        console.log('Could not store in localStorage:', e);
-      }
-
-      // Try to send via chrome.runtime if available
-      try {
-        if (typeof chrome !== 'undefined' && (chrome as any).runtime) {
-          (chrome as any).runtime.sendMessage(message);
-        }
-      } catch (e) {
-        console.log('Could not send chrome message:', e);
-      }
-
-      // Redirect to success URL with address for extension background to capture
-      try {
-        if (typeof (globalThis as any).window !== 'undefined') {
-          const target = new URL('/wallet-success', (globalThis as any).window.location.origin);
-          target.searchParams.set('address', address);
-          (globalThis as any).window.location.replace(target.toString());
-        }
-      } catch (e) {
-        console.log('Could not redirect to success URL:', e);
+        console.log('Could not send postMessage to extension:', e);
       }
     }
   }, [isConnected, address]);
