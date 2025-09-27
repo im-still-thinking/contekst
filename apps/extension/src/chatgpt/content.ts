@@ -1,6 +1,8 @@
 // Content script to inject button into ChatGPT input field
 (() => {
-console.log('ChatGPT Input Logger Extension loaded');
+console.log('🚀 ChatGPT Input Logger Extension loaded');
+console.log('🔍 Extension is running on:', window.location.href);
+console.log('📅 Extension loaded at:', new Date().toLocaleString());
 
 // Global error handler to prevent page crashes
 window.addEventListener('error', (event) => {
@@ -174,6 +176,169 @@ function setInputValue(inputElement: HTMLElement, text: string): void {
 // Backend API configuration
 const API_BASE_URL = 'http://localhost:3000';
 
+// Global variable to store captured images
+let capturedImages: { base64: string; filename: string; timestamp: number }[] = [];
+
+// Function to convert file to base64
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix to get just the base64 string
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Function to capture and store image
+async function captureImage(file: File): Promise<void> {
+  try {
+    console.log('Capturing image:', file.name, 'Size:', file.size, 'Type:', file.type);
+    
+    const base64 = await fileToBase64(file);
+    const imageData = {
+      base64,
+      filename: file.name,
+      timestamp: Date.now()
+    };
+    
+    capturedImages.push(imageData);
+    
+    console.log('Image captured and stored:', {
+      filename: file.name,
+      size: file.size,
+      type: file.type,
+      base64Length: base64.length,
+      totalImages: capturedImages.length
+    });
+    
+    // Log the first 100 characters of base64 for verification
+    console.log('Base64 preview:', base64.substring(0, 100) + '...');
+    
+  } catch (error) {
+    console.error('Error capturing image:', error);
+  }
+}
+
+// Global flags to prevent multiple setups
+let imageUploadInterceptionSetup = false;
+let sendButtonInterceptionSetup = false;
+
+// Function to setup image upload interception
+function setupImageUploadInterception(): void {
+  if (imageUploadInterceptionSetup) {
+    return; // Already setup, skip
+  }
+  
+  console.log('Setting up image upload interception for ChatGPT...');
+  imageUploadInterceptionSetup = true;
+  
+  // Intercept file input changes
+  const interceptFileInput = (input: HTMLInputElement) => {
+    if (input.type === 'file' && !input.hasAttribute('data-image-intercepted')) {
+      console.log('Found file input, setting up interception:', input);
+      input.setAttribute('data-image-intercepted', 'true');
+      
+      input.addEventListener('change', async (event) => {
+        const target = event.target as HTMLInputElement;
+        const files = target.files;
+        
+        if (files && files.length > 0) {
+          console.log(`File input changed, ${files.length} files selected`);
+          
+          for (const file of Array.from(files)) {
+            // Check if it's an image file
+            if (file.type.startsWith('image/')) {
+              await captureImage(file);
+            } else {
+              console.log('Non-image file detected:', file.name, file.type);
+            }
+          }
+        }
+      });
+    }
+  };
+  
+  // Find existing file inputs
+  const existingInputs = document.querySelectorAll('input[type="file"]');
+  existingInputs.forEach((input) => interceptFileInput(input as HTMLInputElement));
+  
+  // Monitor for new file inputs
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) {
+          const element = node as Element;
+          
+          // Check if the added node is a file input
+          if (element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'file') {
+            interceptFileInput(element as HTMLInputElement);
+          }
+          
+          // Check if the added node contains file inputs
+          const fileInputs = element.querySelectorAll?.('input[type="file"]');
+          if (fileInputs) {
+            fileInputs.forEach((input) => interceptFileInput(input as HTMLInputElement));
+          }
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Also intercept drag and drop events
+  document.addEventListener('dragover', (event) => {
+    event.preventDefault();
+  });
+  
+  document.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      console.log(`Drag and drop detected, ${files.length} files dropped`);
+      
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          await captureImage(file);
+        } else {
+          console.log('Non-image file dropped:', file.name, file.type);
+        }
+      }
+    }
+  });
+  
+  console.log('Image upload interception setup complete');
+}
+
+// Function to display captured images info (for testing)
+function displayCapturedImagesInfo(): void {
+  console.log('=== CAPTURED IMAGES INFO ===');
+  console.log(`Total images captured: ${capturedImages.length}`);
+  
+  capturedImages.forEach((image, index) => {
+    console.log(`Image ${index + 1}:`, {
+      filename: image.filename,
+      timestamp: new Date(image.timestamp).toLocaleString(),
+      base64Length: image.base64.length,
+      base64Preview: image.base64.substring(0, 50) + '...'
+    });
+  });
+  
+  console.log('============================');
+}
+
+// Make the function available globally for testing
+(window as any).displayCapturedImagesInfo = displayCapturedImagesInfo;
+
 // Function to save prompt to backend
 async function savePromptToBackend(prompt: string): Promise<void> {
   try {
@@ -281,6 +446,11 @@ async function savePromptBeforeSend(inputValue: string): Promise<void> {
 
 // Function to setup send button interception (non-blocking approach)
 function setupSendButtonInterception(): void {
+  if (sendButtonInterceptionSetup) {
+    return; // Already setup, skip
+  }
+  
+  sendButtonInterceptionSetup = true;
   const sendButtonSelectors = [
     'button[data-testid="send-button"]',
     'button[aria-label*="Send"]',
@@ -586,6 +756,7 @@ function initialize() {
   // Try to inject the button and setup interception immediately
   const buttonInjected = injectButton();
   setupSendButtonInterception();
+  setupImageUploadInterception();
   
   if (buttonInjected) {
     setupContinuousMonitoring();
@@ -601,6 +772,7 @@ function initialize() {
     
     const success = injectButton();
     setupSendButtonInterception(); // Always try to setup interception
+    setupImageUploadInterception(); // Always try to setup image interception
     
     if (success || attempts >= maxAttempts) {
       clearInterval(retryInterval);
@@ -616,6 +788,7 @@ function initialize() {
   const observer = new MutationObserver(() => {
     const success = injectButton();
     setupSendButtonInterception(); // Always try to setup interception on DOM changes
+    setupImageUploadInterception(); // Always try to setup image interception on DOM changes
     
     if (success) {
       observer.disconnect();
@@ -649,6 +822,8 @@ function setupContinuousMonitoring() {
     
     // Always try to setup send button interception for new buttons
     setupSendButtonInterception();
+    // Always try to setup image upload interception for new elements
+    setupImageUploadInterception();
   });
 
   buttonObserver.observe(document.body, {
