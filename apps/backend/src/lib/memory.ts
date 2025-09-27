@@ -3,8 +3,8 @@ import { keccak256 } from 'js-sha3'
 import { eq, inArray } from 'drizzle-orm'
 import { db } from './db'
 import { memories, memoryEmbeddings, memoryImages } from '../models/memory'
-import { extractMemoryFromPrompt, generateMemoryTags, generateEmbedding, generateImageSummary } from '../lib/ai'
-import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../lib/qdrant'
+import { extractMemoryWithImages, generateMemoryTags, generateEmbedding } from '../lib/ai'
+import { storeEmbedding, type MemoryMetadata } from '../lib/qdrant'
 import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
@@ -54,34 +54,22 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
     const { userId, prompt, source, conversationThread, images } = request
 
     console.log(`🚀 Background job ${jobId} started`)
-    await setJobStatus(jobId, 'processing', { step: 'extracting_memory' })
-
-    // Extract memory from prompt
-    const extractedMemory = await extractMemoryFromPrompt(prompt)
+    await setJobStatus(jobId, 'processing', { step: 'extracting_memory_with_context' })
+  
+    // Extract memory considering both text and images together for more relevant context
+    const extractedMemory = await extractMemoryWithImages(prompt, images)
     if (!extractedMemory.trim()) {
       console.error(`❌ Job ${jobId}: No memory extracted`)
-      await setJobStatus(jobId, 'failed', { error: 'No memory extracted from prompt' })
+      await setJobStatus(jobId, 'failed', { error: 'No memory extracted from prompt and images' })
       return
     }
 
-    // Process images if provided
-    let imageSummaries: string[] = []
-    if (images && images.length > 0) {
-      await setJobStatus(jobId, 'processing', { step: 'processing_images' })
-
-      imageSummaries = await Promise.all(
-        images.map(image => generateImageSummary(image.base64))
-      )
-    }
-
     await setJobStatus(jobId, 'processing', { step: 'generating_tags_and_embeddings' })
-
-    const enrichedMemory = [extractedMemory, ...imageSummaries.filter(Boolean)].join(' ')
-
-    // Generate tags and embedding in parallel
+    
+    // Generate tags and embeddings from the contextual memory
     const [tags, embedding] = await Promise.all([
-      generateMemoryTags(enrichedMemory),
-      generateEmbedding(enrichedMemory)
+      generateMemoryTags(extractedMemory),
+      generateEmbedding(extractedMemory)
     ])
 
     const memoryId = nanoid()
@@ -90,7 +78,7 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
     const blockchainFingerprint = createBlockchainFingerprint({
       prompt,
       source,
-      extractedMemory: enrichedMemory,
+      extractedMemory,
       tags,
       conversationThread,
       imageIdentifiers: images?.map(img => img.identifier)
@@ -103,7 +91,7 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       prompt,
       source,
       conversationThread,
-      extractedMemory: enrichedMemory,
+      extractedMemory,
       tags,
       blockchainFingerprint
     })
@@ -111,14 +99,13 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
     // Store images if provided
     if (images && images.length > 0) {
       await setJobStatus(jobId, 'processing', { step: 'storing_images' })
-
-      const imageRecords = images.map((image, index) => ({
+      
+      const imageRecords = images.map((image) => ({
         id: nanoid(),
         memoryId,
         userId,
         identifier: image.identifier,
         base64: image.base64,
-        summary: imageSummaries[index] || null
       }))
 
       await db.insert(memoryImages).values(imageRecords)
@@ -338,4 +325,3 @@ export async function retrieveRelevantMemories(
     console.error('Memory retrieval failed:', error)
     throw error
   }
-}
