@@ -10,9 +10,11 @@ export const apiRoutes = new Elysia({ prefix: '/api' })
   // RainbowKit: Get nonce for authentication
   .get('/nonce', async () => {
     try {
-      const nonce = await generateNonce('rainbow')
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2)}`
+      const nonce = await generateNonce(sessionId)
       return nonce
     } catch (error) {
+      console.error('Error generating nonce:', error)
       return { error: 'Failed to generate nonce' }
     }
   })

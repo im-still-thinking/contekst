@@ -19,21 +19,22 @@ await client.connect()
 export { client as redis }
 
 // Nonce management functions
-export async function generateNonce(walletId: string): Promise<string> {
+export async function generateNonce(sessionId: string): Promise<string> {
   const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   
-  // Store nonce with 10 minute expiry
-  await client.setEx(`nonce:${walletId}`, 600, nonce)
+  // Store nonce with 10 minute expiry - using the nonce itself as key for global validation
+  await client.setEx(`nonce:${nonce}`, 600, sessionId)
   
   return nonce
 }
 
 export async function validateAndClearNonce(walletId: string, nonce: string): Promise<boolean> {
-  const storedNonce = await client.get(`nonce:${walletId}`)
+  // Check if nonce exists and hasn't been used
+  const sessionId = await client.get(`nonce:${nonce}`)
   
-  if (storedNonce === nonce) {
-    // Clear the nonce after successful validation
-    await client.del(`nonce:${walletId}`)
+  if (sessionId) {
+    // Clear the nonce after successful validation (mark as used)
+    await client.del(`nonce:${nonce}`)
     return true
   }
   

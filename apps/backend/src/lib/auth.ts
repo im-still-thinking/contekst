@@ -56,6 +56,17 @@ export async function verifySiweMessage(message: string, signature: string) {
       nonce: siweMessage.nonce
     })
     
+    // Validate nonce first
+    console.log('🔑 Validating nonce...')
+    const { validateAndClearNonce } = await import('./redis')
+    const isValidNonce = await validateAndClearNonce(siweMessage.address.toLowerCase(), siweMessage.nonce)
+    
+    if (!isValidNonce) {
+      console.log('❌ Invalid or expired nonce')
+      return { success: false, error: 'Invalid or expired nonce' }
+    }
+    console.log('✅ Nonce validated and cleared')
+    
     console.log('🔐 Verifying signature...')
     const fields = await siweMessage.verify({ signature })
     console.log('📊 Verification fields:', fields)

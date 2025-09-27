@@ -1,8 +1,9 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { useAuthContext } from '../providers/AuthProvider';
+import type { ReactNode } from 'react';
 import { useAccount } from 'wagmi';
+import { useEffect, useState } from 'react';
+import { checkAuthStatus } from '../../lib/api';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,10 +11,25 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuthContext();
   const { isConnected } = useAccount();
+  const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
 
-  if (isLoading) {
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!isConnected) {
+        setAuthStatus('unauthenticated');
+        return;
+      }
+
+      const isAuthenticated = await checkAuthStatus();
+      setAuthStatus(isAuthenticated ? 'authenticated' : 'unauthenticated');
+    };
+
+    checkAuth();
+  }, [isConnected]);
+
+  // Show loading state while checking authentication
+  if (authStatus === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -24,6 +40,7 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     );
   }
 
+  // If wallet is not connected
   if (!isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -48,7 +65,8 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  // If wallet is connected but not authenticated
+  if (authStatus === 'unauthenticated') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
@@ -72,5 +90,6 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     );
   }
 
+  // If authenticated, render children
   return <>{children}</>;
 }
