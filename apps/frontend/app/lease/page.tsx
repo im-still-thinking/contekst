@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignMessage } from 'wagmi';
 import { logoutUser, api } from '../../lib/api';
 import { useRouter } from 'next/navigation';
 
@@ -31,6 +31,7 @@ const availableGrantees = [
 
 function LeasePageContent() {
   const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const router = useRouter();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState("");
@@ -38,6 +39,7 @@ function LeasePageContent() {
   const [durationDays, setDurationDays] = useState(30);
   const [isLoading, setIsLoading] = useState(false);
   const [isContractLoading, setIsContractLoading] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
   const [leases, setLeases] = useState<LeaseDisplay[]>([]);
   const [error, setError] = useState("");
 
@@ -67,6 +69,11 @@ function LeasePageContent() {
       return;
     }
 
+    if (!address) {
+      setError("Please connect your wallet to create a lease");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     try {
@@ -80,16 +87,60 @@ function LeasePageContent() {
       const result = await response.json() as { success: boolean; leaseId?: string; error?: string };
       
       if (response.ok && result.success) {
-        alert(`Lease created successfully! Lease ID: ${result.leaseId}`);
+        // Now sign the lease creation with MetaMask
+        setIsSigning(true);
         
-        // Refresh leases list
-        await fetchLeases();
-        
-        // Reset form
-        setShowCreateForm(false);
-        setSelectedEntity("");
-        setSelectedAccessSpecifier("global");
-        setDurationDays(30);
+        try {
+          // Create a structured message for signing
+          const leaseMessage = `Contekst Lease Creation
+
+Lease ID: ${result.leaseId}
+Entity: ${selectedEntity}
+Access Level: ${selectedAccessSpecifier}
+Duration: ${durationDays} days
+Wallet Address: ${address}
+Timestamp: ${new Date().toISOString()}
+
+By signing this message, you confirm the creation of this memory access lease.`;
+
+          // Sign the message with MetaMask
+          const signature = await signMessageAsync({ 
+            message: leaseMessage 
+          });
+
+          console.log("Lease signed successfully:", signature);
+          
+          // Send signature to backend for verification/storage
+          // const signatureResponse = await api.post('/lease/sign', {
+          //   leaseId: result.leaseId,
+          //   signature: signature,
+          //   message: leaseMessage
+          // });
+
+          // if (signatureResponse.ok) {
+            alert(`Lease created and signed successfully! Lease ID: ${result.leaseId}`);
+            
+            // Refresh leases list
+            await fetchLeases();
+            
+            // Reset form
+            setShowCreateForm(false);
+            setSelectedEntity("");
+            setSelectedAccessSpecifier("global");
+            setDurationDays(30);
+          // } else {
+          //   setError("Lease created but signature verification failed");
+          // }
+        } catch (signError: any) {
+          console.error("Error signing lease:", signError);
+          if (signError.message?.includes("User rejected")) {
+            setError("Lease creation was cancelled - signature rejected by user");
+          } else {
+            setError(`Lease created but signing failed: ${signError.message || 'Unknown error'}`);
+          }
+        } finally {
+          setIsSigning(false);
+        }
       } else {
         setError(result.error || 'Failed to create lease');
       }
@@ -364,8 +415,9 @@ function LeasePageContent() {
                   className="w-full p-3 border border-custom-primary-300 rounded-lg focus:ring-2 focus:ring-custom-primary-500 focus:border-transparent"
                 >
                   <option value="global">Global Access</option>
-                  <option value="vscode-extension">VSCode Extension Only</option>
-                  <option value="web-extension">Web Extension Only</option>
+                  <option value="vscode-extension">claude</option>
+                  <option value="web-extension">chatgpt</option>
+                  <option value="web-extension">global</option>
                 </select>
               </div>
 
@@ -392,10 +444,10 @@ function LeasePageContent() {
                 </button>
                 <button
                   onClick={handleCreateLease}
-                  disabled={isLoading}
+                  disabled={isLoading || isSigning}
                   className="flex-1 px-4 py-2 bg-custom-primary-500 text-white rounded-lg hover:bg-custom-primary-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? "Creating Lease..." : "Create Lease"}
+                  {isSigning ? "Signing with MetaMask..." : isLoading ? "Creating Lease..." : "Create Lease"}
                 </button>
               </div>
             </div>
