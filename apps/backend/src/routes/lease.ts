@@ -17,7 +17,7 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
     })
     // Create a new lease
     .post('/create', async ({ body, ...context }) => {
-        const { entity, accessSpecifier, durationDays } = body
+        const { entity, accessSpecifier, durationDays, txHash } = body
         const walletId = getWalletFromContext(context)
 
         if (!walletId || !entity || !accessSpecifier) {
@@ -28,7 +28,8 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
             walletId,
             entity,
             accessSpecifier,
-            durationDays
+            durationDays,
+            txHash
         })
 
         if (result.success) {
@@ -52,20 +53,23 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
                 minimum: 1, 
                 maximum: 365,
                 description: 'Duration in days (default: 7)' 
+            })),
+            txHash: t.Optional(t.String({
+                description: 'Smart contract transaction hash (provided by frontend)'
             }))
         })
     })
 
     // Revoke an existing lease
     .post('/revoke', async ({ body, ...context }) => {
-        const { leaseId } = body
+        const { leaseId, revokeTxHash } = body
         const walletId = getWalletFromContext(context)
 
         if (!leaseId || !walletId) {
             return { error: 'Missing required fields: leaseId' }
         }
 
-        const result = await revokeLease(leaseId, walletId)
+        const result = await revokeLease(leaseId, walletId, revokeTxHash)
 
         if (result.success) {
             return {
@@ -77,7 +81,10 @@ export const leaseRoutes = new Elysia({ prefix: '/lease' })
         return { error: result.error }
     }, {
         body: t.Object({
-            leaseId: t.String()
+            leaseId: t.String(),
+            revokeTxHash: t.Optional(t.String({
+                description: 'Smart contract revocation transaction hash (provided by frontend)'
+            }))
         })
     })
 

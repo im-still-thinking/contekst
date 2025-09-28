@@ -48,8 +48,12 @@ export function clearAuthToken(): void {
 export async function checkAuthStatus(): Promise<boolean> {
   try {
     const token = getAuthToken();
-    if (!token) return false;
+    if (!token) {
+      console.log('No token found in localStorage');
+      return false;
+    }
 
+    console.log('Checking auth status with token:', token.substring(0, 20) + '...');
     const response = await fetch(`${API_BASE}/api/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -57,7 +61,14 @@ export async function checkAuthStatus(): Promise<boolean> {
       },
     });
 
-    return response.ok;
+    console.log('Auth status check response:', response.status);
+    if (response.ok) {
+      const data = await response.json() as { authenticated: boolean };
+      console.log('Auth status data:', data);
+      return data.authenticated === true;
+    }
+    
+    return false;
   } catch (error) {
     console.error('Error checking auth status:', error);
     return false;

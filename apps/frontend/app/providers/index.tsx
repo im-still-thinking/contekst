@@ -36,8 +36,14 @@ export function Providers({ children }: ProvidersProps) {
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
-      const isAuthenticated = await checkAuthStatus();
-      setAuthStatus(isAuthenticated ? 'authenticated' : 'unauthenticated');
+      try {
+        const isAuthenticated = await checkAuthStatus();
+        console.log('Auth check result:', isAuthenticated);
+        setAuthStatus(isAuthenticated ? 'authenticated' : 'unauthenticated');
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setAuthStatus('unauthenticated');
+      }
     };
 
     checkAuth();

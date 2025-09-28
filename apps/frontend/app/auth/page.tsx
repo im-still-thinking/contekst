@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
 import { SignInButton } from '../components/SignInButton';
 import { checkAuthStatus, logoutUser } from '../../lib/api';
 
 function AuthContent() {
   const { address, isConnected } = useAccount();
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,10 +35,22 @@ function AuthContent() {
     checkAuth();
   }, [isConnected, address]);
 
+  // Redirect to main page when authenticated
+  useEffect(() => {
+    if (isAuthenticated && isConnected && !isLoading) {
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 1500); // Small delay to show success message
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isConnected, isLoading, router]);
+
   const handleSignInSuccess = () => {
     setError(null);
     setIsAuthenticated(true);
     console.log('Authentication successful!');
+    // The redirect will be handled by the useEffect above
   };
 
   const handleSignInError = (errorMessage: string) => {
@@ -91,6 +105,7 @@ function AuthContent() {
                 </svg>
                 <h3 className="text-green-800 font-medium">Authentication Successful!</h3>
               </div>
+              <p className="text-sm text-green-700 mb-3">Redirecting to main dashboard...</p>
               <div className="text-sm text-green-700 mb-3">
                 <p className="font-medium">Connected Address:</p>
                 <p className="font-mono text-xs break-all">{address}</p>

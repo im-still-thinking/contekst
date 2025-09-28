@@ -2,6 +2,10 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { useAccount } from 'wagmi';
+import { logoutUser } from '../lib/api';
+import { useRouter } from 'next/navigation';
 
 const analyticsData = [
   {
@@ -86,12 +90,23 @@ const memoryData = [
   },
 ];
 
-export default function Dashboard() {
+function DashboardContent() {
+  const { address } = useAccount();
+  const router = useRouter();
   const [approvalIndex, setApprovalIndex] = useState(0);
   const approvals: { name: string; value: number }[] = Array.isArray(analyticsData[2]?.value)
     ? (analyticsData[2].value as { name: string; value: number }[])
     : [];
   const currentApproval = approvals[approvalIndex] || { name: "", value: 0 };
+
+  const handleSignOut = async () => {
+    try {
+      await logoutUser();
+      router.push('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const goPrev = () => {
     if (approvals.length === 0) return;
@@ -108,19 +123,36 @@ export default function Dashboard() {
         {/* Navigation Header */}
         <div className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-custom-primary-500">Contekst Dashboard</h1>
-          <div className="flex gap-4">
-            <Link
-              href="/auth"
-              className="px-6 py-2 bg-custom-primary-500 text-white rounded-lg hover:bg-custom-primary-600 transition-colors duration-200 font-medium"
-            >
-              Authenticate Wallet
-            </Link>
-            <Link
-              href="/dashboard"
-              className="px-6 py-2 bg-white text-custom-primary-500 border border-custom-primary-300 rounded-lg hover:bg-custom-primary-50 transition-colors duration-200 font-medium"
-            >
-              Protected Dashboard
-            </Link>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-4">
+              {/* <Link
+                href="/dashboard"
+                className="px-6 py-2 bg-white text-custom-primary-500 border border-custom-primary-300 rounded-lg hover:bg-custom-primary-50 transition-colors duration-200 font-medium"
+              >
+                Protected Dashboard
+              </Link> */}
+              <Link
+                href="/lease"
+                className="px-6 py-2 bg-white text-custom-primary-500 border border-custom-primary-300 rounded-lg hover:bg-custom-primary-50 transition-colors duration-200 font-medium"
+              >
+                Lease Management
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              {address && (
+                <div className="text-sm text-custom-primary-600">
+                  <span className="font-mono">
+                    {address.slice(0, 6)}...{address.slice(-4)}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 text-sm font-medium text-custom-primary-600 bg-white border border-custom-primary-300 rounded-lg hover:bg-custom-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-primary-500"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
         {/* Header Stats Cards */}
@@ -247,5 +279,13 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

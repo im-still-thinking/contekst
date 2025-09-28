@@ -515,8 +515,8 @@ async function savePromptToBackend(prompt: string): Promise<void> {
     // Include captured images if any
     const requestBody: any = { 
       prompt: prompt,
-      source: 'claude.ai',
-      entity: 'claude.ai'
+      source: 'claude',
+      entity: 'claude'
     };
 
     if (capturedImages.length > 0) {
@@ -580,8 +580,8 @@ async function fetchContextFromAPI(originalText: string): Promise<string> {
       },
       body: JSON.stringify({ 
         userPrompt: originalText,
-        source: 'claude.ai',
-        entity: 'claude.ai'
+        source: 'claude',
+        entity: 'claude'
       }),
     });
 

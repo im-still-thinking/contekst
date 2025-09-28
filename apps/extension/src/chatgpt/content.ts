@@ -437,8 +437,8 @@ async function savePromptToBackend(prompt: string): Promise<void> {
     // Include captured images if any
     const requestBody: any = { 
       prompt: prompt,
-      entity: 'chatgpt.com',
-      source: 'chatgpt.com'
+      entity: 'chatgpt',
+      source: 'chatgpt'
     };
 
     if (capturedImages.length > 0) {
@@ -502,8 +502,8 @@ async function fetchContextFromAPI(originalText: string): Promise<string> {
       },
       body: JSON.stringify({ 
         userPrompt: originalText,
-        entity: 'chatgpt.com',
-        source: 'chatgpt.com'
+        entity: 'chatgpt',
+        source: 'chatgpt'
       }),
     });
 
