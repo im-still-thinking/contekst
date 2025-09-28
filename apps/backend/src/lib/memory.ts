@@ -3,8 +3,8 @@ import { keccak256 } from 'js-sha3'
 import { eq, inArray } from 'drizzle-orm'
 import { db } from './db'
 import { memories, memoryEmbeddings, memoryImages } from '../models/memory'
-import { extractMemoryWithImages, generateMemoryTags, generateEmbedding } from '../lib/ai'
-import { storeEmbedding, searchSimilarMemories, type MemoryMetadata } from '../lib/qdrant'
+import { extractMemoryWithImages, generateMemoryTags, generateEmbedding, generateEmbeddings, processTextWithIntent } from '../lib/ai'
+import { storeEmbedding, search, type MemoryMetadata } from '../lib/qdrant'
 import { setJobStatus } from '../lib/redis'
 import { recordAuditTrail } from './audit'
 import { findValidLeaseForAccess } from './lease'
@@ -82,13 +82,15 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       return
     }
 
-    await setJobStatus(jobId, 'processing', { step: 'generating_tags_and_embeddings' })
+    await setJobStatus(jobId, 'processing', { step: 'processing_with_intent_and_chunking' })
     
-    // Generate tags and embeddings from the contextual memory
-    const [tags, embedding] = await Promise.all([
-      generateMemoryTags(extractedMemory),
-      generateEmbedding(extractedMemory)
-    ])
+    // Process text with intent-based approach (includes chunking)
+    const processed = await processTextWithIntent(extractedMemory, source)
+    
+    await setJobStatus(jobId, 'processing', { step: 'generating_embeddings_for_chunks' })
+    
+    // Generate embeddings for all chunks efficiently
+    const embeddings = await generateEmbeddings(processed.chunks)
 
     const memoryId = Date.now().toString() // Use timestamp as integer ID
 
@@ -97,37 +99,52 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       prompt,
       source,
       extractedMemory,
-      tags,
+      tags: processed.tags,
       conversationThread,
       imageIdentifiers: uploadedImages.map(img => img.identifier)
     })
 
     await setJobStatus(jobId, 'processing', { step: 'recording_on_blockchain' })
     
-    const blockchainTxHash = await addMemoryToBlockchain({
-      metadataHash: blockchainFingerprint,
-      sourceDomainName: source // Using source as domain name (e.g., "chatgpt.com", "claude.ai")
-    })
+    let blockchainTxHash: string | null = null
     
-    if (!blockchainTxHash) {
-      console.error(`❌ Failed to record memory on blockchain for ${memoryId}`)
-      throw new Error('Blockchain storage failed - memory not saved')
+    // Check if we're in smart contract mode
+    const isSmartContractMode = process.env.SMART_CONTRACT_ENABLED === 'true'
+    
+    if (isSmartContractMode) {
+      // Production mode: Use actual blockchain
+      blockchainTxHash = await addMemoryToBlockchain({
+        metadataHash: blockchainFingerprint,
+        sourceDomainName: source
+      })
+      
+      if (!blockchainTxHash) {
+        console.error(`❌ Failed to record memory on blockchain for ${memoryId}`)
+        throw new Error('Blockchain storage failed - memory not saved')
+      }
+      
+      console.log(`✅ Memory recorded on blockchain: ${blockchainTxHash}`)
+      
+      // Verify memory exists on blockchain using the fingerprint
+      await setJobStatus(jobId, 'processing', { step: 'verifying_blockchain_storage' })
+      
+      const isOnBlockchain = await isMemoryOnBlockchain(blockchainFingerprint)
+      if (!isOnBlockchain) {
+        console.error(`❌ Memory verification failed on blockchain for fingerprint: ${blockchainFingerprint}`)
+        throw new Error('Blockchain verification failed - memory not found on chain')
+      }
+      
+      console.log(`✅ Memory verified on blockchain: ${blockchainFingerprint}`)
+    } else {
+      // Testing mode: Simulate blockchain interaction
+      blockchainTxHash = 'test-memory-tx-' + Date.now()
+      console.log(`🧪 TESTING MODE: Simulated memory blockchain storage`)
+      console.log(`🔗 Simulated txHash: ${blockchainTxHash}`)
+      console.log(`🔍 Simulated fingerprint: ${blockchainFingerprint}`)
+      console.log(`ℹ️  In production, memory will be stored on blockchain`)
     }
-    
-    console.log(`✅ Memory recorded on blockchain: ${blockchainTxHash}`)
-    
-    // STEP 2: Verify memory exists on blockchain using the fingerprint
-    await setJobStatus(jobId, 'processing', { step: 'verifying_blockchain_storage' })
-    
-    const isOnBlockchain = await isMemoryOnBlockchain(blockchainFingerprint)
-    if (!isOnBlockchain) {
-      console.error(`❌ Memory verification failed on blockchain for fingerprint: ${blockchainFingerprint}`)
-      throw new Error('Blockchain verification failed - memory not found on chain')
-    }
-    
-    console.log(`✅ Memory verified on blockchain: ${blockchainFingerprint}`)
 
-    // STEP 3: Store memory in database ONLY after blockchain success
+    // STEP 3: Store memory in database after blockchain success (or simulation)
     await setJobStatus(jobId, 'processing', { step: 'storing_in_database' })
     
     await db.insert(memories).values({
@@ -137,8 +154,8 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       source,
       conversationThread,
       extractedMemory,
-      tags,
-      blockchainFingerprint // Now guaranteed to be on blockchain
+      tags: processed.tags,
+      blockchainFingerprint // Blockchain fingerprint (on-chain or simulated)
     })
 
     // Store image references if provided
@@ -153,21 +170,56 @@ async function processMemoryBackground(request: ProcessMemoryRequest, jobId: str
       await db.insert(memoryImages).values(imageRecords)
     }
 
-    // Store embedding in Qdrant
-    const success = await storeEmbedding(memoryId, extractedMemory, tags, embedding)
-    if (!success) {
-      console.error(`❌ Job ${jobId}: Failed to store embedding`)
-      await setJobStatus(jobId, 'failed', { error: 'Failed to store embedding in Qdrant' })
+    // Store embeddings for all chunks in Qdrant with user and source info
+    await setJobStatus(jobId, 'processing', { step: 'storing_embeddings_in_qdrant' })
+    
+    let storedChunks = 0
+    const embeddingMappings = []
+    
+    for (let i = 0; i < processed.chunks.length; i++) {
+      const chunk = processed.chunks[i]
+      const embedding = embeddings[i]
+      
+      if (!chunk || !embedding) {
+        console.warn(`⚠️  Skipping chunk ${i} due to missing data`)
+        continue
+      }
+      
+      const chunkId = `${memoryId}_chunk_${i}`
+      const success = await storeEmbedding(
+        chunkId, 
+        chunk, 
+        processed.tags, 
+        embedding, 
+        userId, 
+        source
+      )
+      
+      if (success) {
+        storedChunks++
+        embeddingMappings.push({
+          id: nanoid(),
+          memoryId,
+          userId,
+          qdrantId: chunkId
+        })
+      } else {
+        console.warn(`⚠️  Failed to store chunk ${i} for memory ${memoryId}`)
+      }
+    }
+    
+    if (storedChunks === 0) {
+      console.error(`❌ Job ${jobId}: Failed to store any embeddings`)
+      await setJobStatus(jobId, 'failed', { error: 'Failed to store any embeddings in Qdrant' })
       return
     }
+    
+    console.log(`✅ Successfully stored ${storedChunks}/${processed.chunks.length} chunks in Qdrant`)
 
-    // Store embedding mapping 
-    await db.insert(memoryEmbeddings).values({
-      id: nanoid(),
-      memoryId,
-      userId,
-      qdrantId: memoryId
-    })
+    // Store embedding mappings for all successfully stored chunks
+    if (embeddingMappings.length > 0) {
+      await db.insert(memoryEmbeddings).values(embeddingMappings)
+    }
 
     await setJobStatus(jobId, 'completed', { 
       memoryId,
@@ -198,9 +250,12 @@ export async function retrieveRelevantMemories(
 ) {
   let lease: any = null
   let effectiveSource = source
+  const startTime = Date.now()
 
   try {
     // STEP 1: Find appropriate lease for this access request
+    console.log(`🔍 [MemoryService] Starting vector search for: "${userPrompt}"`)
+    
     const leaseResult = await findValidLeaseForAccess(userId, entity, source)
 
     if (!leaseResult.lease) {
@@ -225,28 +280,30 @@ export async function retrieveRelevantMemories(
 
     console.log(`🔍 Memory access authorized: ${entity} → ${effectiveSource || 'all sources'}`)
 
-    // STEP 5: Generate embedding and search
+    // STEP 3: Efficient vector search with proper threshold filtering
+    const threshold = config.MEMORY_SIMILARITY_THRESHOLD
+    console.log(`🎯 Using similarity threshold: ${threshold}`)
+    
+    console.log(`🧠 [MemoryService] Generating embedding for search query...`)
     const promptEmbedding = await generateEmbedding(userPrompt)
-
-    const searchResults = await searchSimilarMemories(
+    
+    console.log(`🔍 [MemoryService] Searching vector database...`)
+    const searchResults = await search(
       promptEmbedding,
+      limit * 2, // Get more results to ensure we have enough after filtering
+      threshold,
       userId,
-      effectiveSource,
-      limit
+      effectiveSource
     )
 
-    // Filter results by similarity threshold
-    const filteredResults = searchResults.filter((result: any) => result.score >= config.MEMORY_SIMILARITY_THRESHOLD)
-    
-    console.log(`🔍 Similarity filtering: ${searchResults.length} found → ${filteredResults.length} above threshold (${config.MEMORY_SIMILARITY_THRESHOLD})`)
-
-    if (filteredResults.length === 0) {
+    if (searchResults.length === 0) {
+      console.log(`🔍 [MemoryService] No results found above threshold ${threshold}`)
       await recordAuditTrail({
         walletId: userId,
         leaseId: lease.id,
         entity,
         action: 'access_granted',
-        reason: `No memories found above similarity threshold (${config.MEMORY_SIMILARITY_THRESHOLD})`,
+        reason: `No memories found above similarity threshold (${threshold})`,
         userPrompt,
         source: effectiveSource,
         accessedMemories: []
@@ -254,17 +311,55 @@ export async function retrieveRelevantMemories(
       return []
     }
 
-    // STEP 6: Retrieve and process memories
-    const qdrantIds = filteredResults.map((result: any) => String(result.id))
-
-    const embeddingMappings = await db.select({
-      memoryId: memoryEmbeddings.memoryId,
-      qdrantId: memoryEmbeddings.qdrantId
+    // STEP 4: Extract unique memory IDs from chunk results
+    const chunkResults = searchResults.filter((result: any) => {
+      console.log(`📊 Memory chunk ${result.id} similarity score: ${result.score.toFixed(5)}`)
+      return result.score >= threshold
     })
-      .from(memoryEmbeddings)
-      .where(inArray(memoryEmbeddings.qdrantId, qdrantIds))
+    
+    console.log(`🔍 Similarity filtering: ${searchResults.length} found → ${chunkResults.length} above threshold (${threshold})`)
 
-    const memoryIds = embeddingMappings.map(mapping => mapping.memoryId)
+    if (chunkResults.length === 0) {
+      await recordAuditTrail({
+        walletId: userId,
+        leaseId: lease.id,
+        entity,
+        action: 'access_granted',
+        reason: `No memories found above similarity threshold (${threshold})`,
+        userPrompt,
+        source: effectiveSource,
+        accessedMemories: []
+      })
+      return []
+    }
+
+    // STEP 5: Get unique memory IDs and map similarity scores
+    const memoryScores = new Map<string, number>()
+    const memoryChunks = new Map<string, string[]>()
+    
+    for (const result of chunkResults) {
+      const chunkId = String(result.id)
+      // Extract memory ID from chunk ID (format: memoryId_chunk_N)
+      const memoryId = chunkId.replace(/_chunk_\d+$/, '')
+      
+      // Track the best similarity score for each memory
+      const currentScore = memoryScores.get(memoryId) || 0
+      if (result.score > currentScore) {
+        memoryScores.set(memoryId, result.score)
+      }
+      
+      // Collect chunks for each memory
+      if (!memoryChunks.has(memoryId)) {
+        memoryChunks.set(memoryId, [])
+      }
+      const content = result.payload?.content
+      if (typeof content === 'string') {
+        memoryChunks.get(memoryId)!.push(content)
+      }
+    }
+
+    const memoryIds = Array.from(memoryScores.keys())
+    console.log(`🔍 [MemoryService] Found ${memoryIds.length} matching memories`)
 
     if (memoryIds.length === 0) {
       await recordAuditTrail({
@@ -280,7 +375,7 @@ export async function retrieveRelevantMemories(
       return []
     }
 
-    // Retrieve the actual memories with their images
+    // STEP 6: Retrieve the actual memories with their images
     const retrievedMemories = await db.select({
       id: memories.id,
       prompt: memories.prompt,
@@ -297,14 +392,14 @@ export async function retrieveRelevantMemories(
       .leftJoin(memoryImages, eq(memories.id, memoryImages.memoryId))
       .where(inArray(memories.id, memoryIds))
 
-    // Group memories with their images and add similarity scores
+    // STEP 7: Group memories with their images and add similarity scores
     const memoryMap = new Map()
+    const accessedMemoryIds: string[] = [] // Track for background access updates
 
     for (const row of retrievedMemories) {
       if (!memoryMap.has(row.id)) {
-        const qdrantMapping = embeddingMappings.find(m => m.memoryId === row.id)
-        const searchResult = filteredResults.find((r: any) => String(r.id) === qdrantMapping?.qdrantId)
-
+        accessedMemoryIds.push(row.id) // Track for access count update
+        
         memoryMap.set(row.id, {
           id: row.id,
           prompt: row.prompt,
@@ -313,7 +408,8 @@ export async function retrieveRelevantMemories(
           extractedMemory: row.extractedMemory,
           tags: row.tags,
           createdAt: row.createdAt,
-          similarity: searchResult?.score || 0,
+          similarity: memoryScores.get(row.id) || 0,
+          matchedChunks: memoryChunks.get(row.id) || [],
           images: []
         })
       }
@@ -326,25 +422,33 @@ export async function retrieveRelevantMemories(
       }
     }
 
+    // STEP 8: Sort by similarity and limit results
     const result = Array.from(memoryMap.values())
       .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, limit)
 
-    const accessedMemoryIds = result.map(m => m.id)
+    // STEP 9: Access counts are tracked via audit trail (no need for separate tracking)
 
-    // STEP 7: Record successful access audit
+    const endTime = Date.now()
+    console.log(`🔍 [MemoryService] Vector search completed in ${endTime - startTime}ms`)
+    console.log(`🔍 [MemoryService] Results:`, result.map(r => ({ 
+      score: r.similarity.toFixed(3), 
+      summary: r.extractedMemory.substring(0, 60) + '...' 
+    })))
+
+    // STEP 10: Record successful access audit
     await recordAuditTrail({
       walletId: userId,
       leaseId: lease.id,
       entity,
       action: 'access_granted',
-      reason: `Successfully accessed ${accessedMemoryIds.length} memories`,
+      reason: `Successfully accessed ${result.length} memories`,
       userPrompt,
       source: effectiveSource,
-      accessedMemories: accessedMemoryIds
+      accessedMemories: result.map(m => m.id)
     })
 
-    console.log(`📋 Memory access granted: ${entity} accessed ${accessedMemoryIds.length} memories`)
-
+    console.log(`📋 Memory access granted: ${entity} accessed ${result.length} memories`)
     return result
 
   } catch (error) {
@@ -366,3 +470,4 @@ export async function retrieveRelevantMemories(
     throw error
   }
 }
+

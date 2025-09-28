@@ -9,6 +9,11 @@ import { authMiddleware, getWalletFromContext } from '../lib/middleware'
 
 export const memoryRoutes = new Elysia({ prefix: '/memory' })
     .onBeforeHandle(async (context) => {
+        // Skip auth for job status endpoint - it's public for job tracking
+        if (context.request.url.includes('/job/')) {
+            return
+        }
+        
         const result = await authMiddleware(context)
         if (!result.success) {
             context.set.status = 401

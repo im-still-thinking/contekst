@@ -27,7 +27,7 @@ export const auditRoutes = new Elysia({ prefix: '/audit' })
             
             return {
                 success: true,
-                trail,
+                trails: trail,
                 count: trail.length
             }
         } catch (error) {
@@ -55,7 +55,13 @@ export const auditRoutes = new Elysia({ prefix: '/audit' })
             
             return {
                 success: true,
-                stats
+                stats: {
+                    totalAccess: stats.totalAccesses,
+                    accessGranted: stats.grantedAccesses,  
+                    accessDenied: stats.deniedAccesses,
+                    uniqueEntities: 0, // TODO: Calculate unique entities
+                    totalMemoriesAccessed: stats.totalMemoriesAccessed
+                }
             }
         } catch (error) {
             return {

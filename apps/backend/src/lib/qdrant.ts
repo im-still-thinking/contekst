@@ -82,11 +82,58 @@ export interface MemoryMetadata {
   timestamp: number
 }
 
+// Batch upsert for better performance (from performant version)
+export async function upsertPoints(points: Array<{
+  id: string
+  vector: number[]
+  payload: {
+    memoryId: string
+    chunkId?: string
+    content: string
+    source: string
+    tags: string[]
+    originalPrompt?: string
+  }
+}>): Promise<boolean> {
+  try {
+    console.log(`🔍 Batch storing ${points.length} embeddings`)
+    
+    if (!client) {
+      console.error('❌ Qdrant client not available')
+      return false
+    }
+    
+    // Convert points to Qdrant format
+    const qdrantPoints = points.map(point => ({
+      id: point.id,
+      vector: point.vector,
+      payload: {
+        ...point.payload,
+        timestamp: new Date().toISOString()
+      }
+    }))
+    
+    const result = await client.upsert(COLLECTION_NAME, {
+      wait: true,
+      points: qdrantPoints
+    })
+    
+    console.log(`✅ Batch stored ${points.length} embeddings successfully`)
+    return true
+    
+  } catch (error: any) {
+    console.error(`❌ Failed to batch store embeddings:`, error)
+    return false
+  }
+}
+
 export async function storeEmbedding(
   memoryId: string,
   content: string,
   tags: string[],
-  embedding: number[]
+  embedding: number[],
+  walletId?: string,
+  source?: string
 ): Promise<boolean> {
   try {
     console.log(`🔍 Storing embedding for memory ${memoryId}`)
@@ -107,14 +154,17 @@ export async function storeEmbedding(
       return false
     }
     
+    // Use string ID directly (better for chunk IDs like "123_chunk_0")
     const point = {
-      id: parseInt(memoryId), // Convert to integer for Qdrant
+      id: memoryId,
       vector: embedding,
       payload: {
-        content: content.substring(0, 1000), // Limit content size
+        content: content.substring(0, 2000), // More content for better matching
         tags: tags.slice(0, 10), // Limit tags
         timestamp: new Date().toISOString(),
-        memoryId // Keep original string ID in payload
+        memoryId: memoryId.includes('_chunk_') ? memoryId.split('_chunk_')[0] : memoryId,
+        walletId: walletId || 'unknown', // Add walletId for filtering
+        source: source || 'unknown' // Add source for filtering
       }
     }
     
@@ -163,25 +213,29 @@ export async function storeEmbedding(
   }
 }
 
-export async function searchSimilarMemories(
+// Enhanced search with better performance characteristics
+export async function search(
   embedding: number[],
-  walletId: string,
-  source?: string,
-  limit: number = 5
+  limit: number,
+  threshold: number,
+  walletId?: string,
+  source?: string
 ) {
   if (!client) {
     console.warn('⚠️  Qdrant client not available - returning empty results')
     return []
   }
 
-  const filters: any[] = [
-    {
+  const filters: any[] = []
+  
+  // Add filters if specified
+  if (walletId) {
+    filters.push({
       key: 'walletId',
       match: { value: walletId }
-    }
-  ]
-
-  // Add source filter if specified
+    })
+  }
+  
   if (source) {
     filters.push({
       key: 'source',
@@ -190,18 +244,32 @@ export async function searchSimilarMemories(
   }
 
   try {
-    const response = await client.search(COLLECTION_NAME, {
+    const searchParams: any = {
       vector: embedding,
       limit,
-      filter: {
+      with_payload: true,
+      score_threshold: threshold // Use Qdrant's native score threshold
+    }
+    
+    if (filters.length > 0) {
+      searchParams.filter = {
         must: filters
-      },
-      with_payload: true
-    })
+      }
+    }
 
-    return response
+    const response = await client.search(COLLECTION_NAME, searchParams)
+    
+    console.log(`🔍 Qdrant search returned ${response.length} results above threshold ${threshold}`)
+    
+    return response.map(result => ({
+      id: result.id,
+      score: result.score || 0,
+      payload: result.payload || {}
+    }))
+    
   } catch (error) {
     console.error('Qdrant search failed:', error)
     return []
   }
 }
+
