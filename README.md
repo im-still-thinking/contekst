@@ -19,7 +19,7 @@
 - **Vector Database**: Qdrant (using 3072D embeddings for better intent understanding) - hosted on Fluence
 - **Embeddings**: OpenAI's `text-embedding-3-large`
 - **Database**: MySQL with connection pooling - hosted on Fluence
-- **AI Computation**: OpenAI's `gpt-4o-mini` for intent extraction
+- **AI Computation**: OpenAI's `gpt-5-mini` for intent extraction
 - **Blockchain**: Ethereum/Sui integration with smart contracts
 - **Caching**: Redis for high-performance caching - hosted on Fluence
 - **Image Storage**: Walrus decentralized storage
