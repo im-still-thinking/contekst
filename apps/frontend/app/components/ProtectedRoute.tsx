@@ -13,8 +13,15 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   const { isConnected } = useAccount();
   const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    
     const checkAuth = async () => {
       if (!isConnected) {
         setAuthStatus('unauthenticated');
@@ -26,10 +33,10 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     };
 
     checkAuth();
-  }, [isConnected]);
+  }, [isConnected, isClient]);
 
-  // Show loading state while checking authentication
-  if (authStatus === 'loading') {
+  // Show loading state while checking authentication or during SSR
+  if (!isClient || authStatus === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

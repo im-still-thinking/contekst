@@ -12,9 +12,14 @@ export const authenticationAdapter = createAuthenticationAdapter({
   },
 
   createMessage: ({ nonce, address, chainId }) => {
-    // Use safe defaults for SSR
-    const domain = 'localhost:3001';
-    const uri = 'http://localhost:3001';
+    // Use safe defaults that work in both client and server environments
+    let domain = 'localhost:3001';
+    let uri = 'http://localhost:3001';
+    
+    if (typeof globalThis !== 'undefined' && 'location' in globalThis) {
+      domain = (globalThis as any).location.host;
+      uri = (globalThis as any).location.origin;
+    }
     
     return new SiweMessage({
       domain,
@@ -44,7 +49,7 @@ export const authenticationAdapter = createAuthenticationAdapter({
       });
 
       console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', [...response.headers.entries()]);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers));
       
       if (response.ok) {
         const data = await response.json() as { success: boolean; accessToken: string; address: string };

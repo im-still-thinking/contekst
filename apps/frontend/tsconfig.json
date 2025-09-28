@@ -1,14 +1,24 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2015",
+      "ES2017",
+      "ES2018"
+    ],
+    "target": "ES2015",
     "jsx": "preserve",
     "allowJs": true,
     "incremental": true,
+    "downlevelIteration": true,
     "plugins": [
       {
         "name": "next"
       }
-    ]
+    ],
+    "strictNullChecks": true
   },
   "include": [
     "next-env.d.ts",
