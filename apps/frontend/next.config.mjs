@@ -1,30 +1,30 @@
+import path from 'path';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  output: 'standalone', // Use standalone output for better deployment compatibility
+  output: 'standalone',
   experimental: {
-    esmExternals: "loose",
-  },
-  compiler: {
-    styledJsx: false, // Disable styled-jsx completely
+    esmExternals: 'loose',
   },
   webpack: (config, { isServer }) => {
-    config.externals.push("pino-pretty", "lokijs", "encoding");
-    
-    // Handle missing React Native dependencies
+    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+
+    // Handle missing React Native deps
     config.resolve.fallback = {
       ...config.resolve.fallback,
-      "@react-native-async-storage/async-storage": false,
+      '@react-native-async-storage/async-storage': false,
     };
-    
-    // Completely externalize styled-jsx to prevent context issues
-    if (isServer) {
-      config.externals.push("styled-jsx", "styled-jsx/style");
-    }
-    
+
+    // ✅ Force a single React/React-DOM instance
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'react$': path.resolve(process.cwd(), '../../node_modules/react'),
+      'react-dom$': path.resolve(process.cwd(), '../../node_modules/react-dom'),
+    };
+
     return config;
   },
-  // Disable error page static generation
   skipMiddlewareUrlNormalize: true,
   skipTrailingSlashRedirect: true,
 };
