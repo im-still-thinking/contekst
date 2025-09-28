@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Our project is dedicated to providing users with a secure and decentralized platform for storing images and personal memories. By leveraging Walrus, we ensure that all data is stored in a decentralized and encrypted manner, enhancing both security and accessibility.
+Our project is dedicated to providing users with a secure and decentralized platform for storing llm context and memories. By leveraging Walrus, we ensure that all data is stored in a decentralized and encrypted manner, enhancing both security and accessibility.
 
 ## Introduction to Walrus
 
