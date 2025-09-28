@@ -1,0 +1,186 @@
+{
+	"compiler": {
+		"version": "0.8.28+commit.7893614a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "officialAddress",
+						"type": "address"
+					}
+				],
+				"name": "DomainRegistered",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "admin",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "domains",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "getDomainAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					}
+				],
+				"name": "isDomainRegistered",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domainName",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "officialAddress",
+						"type": "address"
+					}
+				],
+				"name": "registerDomain",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "Hedera-compatible domain registry for storing domain-to-address mappings Focus: Simple domain registration without complex features",
+			"kind": "dev",
+			"methods": {
+				"getDomainAddress(string)": {
+					"details": "Get the official address for a domain",
+					"params": {
+						"domainName": "The domain name to look up"
+					},
+					"returns": {
+						"_0": "The official address for the domain"
+					}
+				},
+				"isDomainRegistered(string)": {
+					"details": "Check if a domain is registered",
+					"params": {
+						"domainName": "The domain name to check"
+					},
+					"returns": {
+						"_0": "True if registered, false otherwise"
+					}
+				},
+				"registerDomain(string,address)": {
+					"details": "Register a domain with its official address",
+					"params": {
+						"domainName": "The domain name (e.g., \"chatgpt.com\")",
+						"officialAddress": "The official wallet address for this domain"
+					}
+				}
+			},
+			"title": "SimpleDomainRegistry",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/SimpleDomainRegistry.sol": "SimpleDomainRegistry"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/SimpleDomainRegistry.sol": {
+			"keccak256": "0xf2864a81be8604dacb1893a9a31d2c122e0541704cf94c4106ed1362913cc707",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://e9cf75aaf160abac9eb096aefd69e819df6a17f4d18600c7708b5f73ce200841",
+				"dweb:/ipfs/QmWTb8nx7fAqCuv19drkREXoBJJSX48THx89aFr6j9zG6W"
+			]
+		}
+	},
+	"version": 1
+}

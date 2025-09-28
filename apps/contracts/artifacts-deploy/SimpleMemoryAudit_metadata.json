@@ -1,0 +1,529 @@
+{
+	"compiler": {
+		"version": "0.8.28+commit.7893614a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_domainRegistry",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "DomainAccessGranted",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "DomainAccessRevoked",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": true,
+						"internalType": "string",
+						"name": "accessingDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "MemoryAccessed",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "MemoryCreated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "timestamp",
+						"type": "uint256"
+					}
+				],
+				"name": "MemoryDeleted",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "string",
+						"name": "accessingDomain",
+						"type": "string"
+					}
+				],
+				"name": "accessMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "metadataHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"name": "createMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "deleteMemory",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"name": "domainAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "domainRegistry",
+				"outputs": [
+					{
+						"internalType": "contract ISimpleDomainRegistry",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					}
+				],
+				"name": "getDomainAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "getMemory",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "owner",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "metadataHash",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "createdAt",
+								"type": "uint256"
+							},
+							{
+								"internalType": "string",
+								"name": "sourceDomain",
+								"type": "string"
+							}
+						],
+						"internalType": "struct SimpleMemoryAudit.Memory",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					}
+				],
+				"name": "grantDomainAccess",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					}
+				],
+				"name": "hasDomainAccess",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "memoryId",
+						"type": "bytes32"
+					}
+				],
+				"name": "isMemoryExists",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"name": "memories",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "metadataHash",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "createdAt",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "sourceDomain",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "domain",
+						"type": "string"
+					}
+				],
+				"name": "revokeDomainAccess",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "Hedera-compatible memory audit contract focused on domain-based access control Features: 1. Store memory metadata hash on-chain 2. Domain-based access control only 3. Complete audit trail of access grants 4. No time limits, no wallet access, no complex features",
+			"kind": "dev",
+			"methods": {
+				"accessMemory(bytes32,string)": {
+					"details": "Access a memory (domain must have access)",
+					"params": {
+						"accessingDomain": "The domain requesting access",
+						"memoryId": "The memory ID to access"
+					}
+				},
+				"createMemory(bytes32,string)": {
+					"details": "Create a new memory",
+					"params": {
+						"metadataHash": "Hash of the off-chain metadata",
+						"sourceDomain": "Domain where memory was created"
+					}
+				},
+				"deleteMemory(bytes32)": {
+					"details": "Delete a memory",
+					"params": {
+						"memoryId": "The memory ID to delete"
+					}
+				},
+				"getDomainAccess(address,string)": {
+					"details": "Get all domains with access to owner's memories",
+					"params": {
+						"domain": "The domain to check",
+						"owner": "The owner to check"
+					},
+					"returns": {
+						"_0": "True if domain has access"
+					}
+				},
+				"getMemory(bytes32)": {
+					"details": "Get memory information",
+					"params": {
+						"memoryId": "The memory ID to retrieve"
+					},
+					"returns": {
+						"_0": "Memory struct with all data"
+					}
+				},
+				"grantDomainAccess(string)": {
+					"details": "Grant access to a domain",
+					"params": {
+						"domain": "Domain to grant access to"
+					}
+				},
+				"hasDomainAccess(bytes32,string)": {
+					"details": "Check if a domain has access to a memory",
+					"params": {
+						"domain": "The domain to check access for",
+						"memoryId": "The memory ID to check"
+					},
+					"returns": {
+						"_0": "True if domain has access"
+					}
+				},
+				"isMemoryExists(bytes32)": {
+					"details": "Check if memory exists",
+					"params": {
+						"memoryId": "The memory ID to check"
+					},
+					"returns": {
+						"_0": "True if memory exists"
+					}
+				},
+				"revokeDomainAccess(string)": {
+					"details": "Revoke access from a domain",
+					"params": {
+						"domain": "Domain to revoke access from"
+					}
+				}
+			},
+			"title": "SimpleMemoryAudit",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/SimpleMemoryAudit.sol": "SimpleMemoryAudit"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/ISimpleDomainRegistry.sol": {
+			"keccak256": "0xcc29f8fe0036ca66f42824337fac8a19c34cfb1a7042bb9b5b3bcc091337b83b",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8427615cdb6c5fe79c3123afaf227721466077a0f4506b14e1481b1d307dd8bf",
+				"dweb:/ipfs/QmZ3EHoj9bgrdQDiRjzvnUYGfU9zuY5a5ThPGbtTguE1wd"
+			]
+		},
+		"contracts/SimpleMemoryAudit.sol": {
+			"keccak256": "0x2f3a19263f896fb60b8470e047aa0281af9542a1efcec73e8612f728bebf0cad",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://56c47480993b7d256757e88620c1f943949f20819cfbc2cf30953a1f4e8442a2",
+				"dweb:/ipfs/QmVLZkm3W91fUbswTtgrcG127HdYVPojzS7eHHZfVntWg8"
+			]
+		}
+	},
+	"version": 1
+}
