@@ -35,6 +35,33 @@
 | MySQL | 3306 | Relational database |
 | Redis | 6379 | In-memory cache |
 
+Our project is built on a robust, containerized architecture that includes:
+
+Custom Backend Service: The core application logic.
+
+Qdrant: A high-performance vector database for AI-powered similarity searches.
+
+Redis: An in-memory data store used for caching and high-speed data retrieval.
+
+MySQL: A reliable relational database for structured data storage.
+
+The entire stack is designed for self-hosting, giving you full control over your data and infrastructure.
+
+2. Why Fluence?
+Choosing the right infrastructure is critical. This project is deployed on Fluence, a decentralized cloud platform, for several strategic advantages over traditional hyperscalers like AWS or Google Cloud:
+
+Cost Efficiency: Fluence offers enterprise-grade compute resources at a fraction of the cost of centralized providers, making it economically viable to run powerful, stateful services without prohibitive expenses.   
+
+Freedom from Vendor Lock-In: By operating on a network of independent data centers, Fluence allows you to migrate workloads between providers freely. This eliminates the risk of vendor lock-in and provides greater control over your infrastructure.   
+
+Enhanced Control and Transparency: Fluence provides a "cloudless" environment where you have direct control over hardware selection, geographic location, and data handling. This transparency is crucial for compliance and data sovereignty.   
+
+Decentralized and Censorship-Resistant: Built on a Web3-native foundation, Fluence offers a more resilient and censorship-resistant infrastructure, ensuring your application remains available and independent.   
+
+Enterprise-Grade and Certified Hardware: You can select compute providers that meet specific compliance standards like GDPR, ISO 27001, and SOC2, ensuring your deployment meets enterprise security and regulatory requirements.   
+
+
+
 Here is a complete Terraform configuration to deploy your entire application stack. This setup uses Terraform to create the VM and then uses a remote provisioner to run the service deployment script, making the entire process a single command.
 
 ### Project Structure
