@@ -250,7 +250,7 @@ function setInputValue(inputElement: HTMLElement, text: string): void {
 }
 
 // Backend API configuration
-const API_BASE_URL = 'http://81.15.150.177';
+const API_BASE_URL = 'https://3da8727e2417.ngrok-free.app';
 
 // Global variable to store captured images
 let capturedImages: { base64: string; filename: string; timestamp: number }[] = [];
