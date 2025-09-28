@@ -13,8 +13,8 @@ export const authenticationAdapter = createAuthenticationAdapter({
 
   createMessage: ({ nonce, address, chainId }) => {
     // Use safe defaults that work in both client and server environments
-    let domain = 'localhost:3001';
-    let uri = 'http://localhost:3001';
+    let domain = 'https://contekst-frontend.vercel.app';
+    let uri = 'https://contekst-frontend.vercel.app';
     
     if (typeof globalThis !== 'undefined' && 'location' in globalThis) {
       domain = (globalThis as any).location.host;

@@ -44,10 +44,10 @@ export function WalletConnect() {
 
       // Step 2: Create SIWE message
       const message = new SiweMessage({
-        domain: 'localhost:3001',
+        domain: 'https://contekst-frontend.vercel.app',
         address,
         statement: 'Sign in to Contekst Extension',
-        uri: 'http://localhost:3001',
+        uri: 'https://contekst-frontend.vercel.app',
         version: '1',
         chainId: 1, // mainnet
         nonce: nonce!,
