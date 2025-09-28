@@ -1,6 +1,7 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
 import { config } from '../lib/config'
 import { nanoid } from 'nanoid'
+import { createHash } from 'crypto'
 
 let client: QdrantClient | null = null
 
@@ -19,6 +20,15 @@ try {
 export { client }
 
 const COLLECTION_NAME = 'memories'
+
+// Helper function to convert string IDs to integer IDs for Qdrant
+function stringToIntId(str: string): number {
+  // Create a hash of the string and convert to integer
+  const hash = createHash('sha256').update(str).digest('hex')
+  // Take first 8 characters and convert to integer (to avoid overflow)
+  const intId = parseInt(hash.substring(0, 8), 16)
+  return Math.abs(intId) // Ensure positive number
+}
 
 // Test Qdrant connection
 export async function testQdrantConnection(): Promise<boolean> {
@@ -103,12 +113,13 @@ export async function upsertPoints(points: Array<{
       return false
     }
     
-    // Convert points to Qdrant format
+    // Convert points to Qdrant format with integer IDs
     const qdrantPoints = points.map(point => ({
-      id: point.id,
+      id: stringToIntId(point.id), // Convert string ID to integer
       vector: point.vector,
       payload: {
         ...point.payload,
+        originalId: point.id, // Store original string ID in payload for reference
         timestamp: new Date().toISOString()
       }
     }))
@@ -142,47 +153,76 @@ export async function storeEmbedding(
     console.log(`🏷️  Tags: ${JSON.stringify(tags)}`)
     
     // Validate embedding dimensions
-    if (embedding.length !== 3072) {
-      console.error(`❌ Invalid embedding dimensions: ${embedding.length}, expected 3072`)
+    if (!Array.isArray(embedding) || embedding.length !== 3072) {
+      console.error(`❌ Invalid embedding: not array or wrong dimensions ${embedding?.length}, expected 3072`)
       return false
     }
     
     // Validate that all embedding values are numbers
-    const hasNaN = embedding.some(val => isNaN(val) || !isFinite(val))
+    const hasNaN = embedding.some(val => typeof val !== 'number' || isNaN(val) || !isFinite(val))
     if (hasNaN) {
-      console.error(`❌ Embedding contains NaN or infinite values`)
+      console.error(`❌ Embedding contains NaN, infinite, or non-numeric values`)
+      console.error(`❌ First few values: ${embedding.slice(0, 5)}`)
       return false
     }
     
-    // Use string ID directly (better for chunk IDs like "123_chunk_0")
+    // Validate content and tags
+    if (typeof content !== 'string') {
+      console.error(`❌ Content must be a string, got: ${typeof content}`)
+      return false
+    }
+    
+    if (!Array.isArray(tags)) {
+      console.error(`❌ Tags must be an array, got: ${typeof tags}`)
+      return false
+    }
+    
+    // Convert string ID to integer ID for Qdrant compatibility
+    const originalId = String(memoryId).trim()
+    if (!originalId) {
+      console.error(`❌ Invalid ID format: "${originalId}"`)
+      return false
+    }
+    
+    const intId = stringToIntId(originalId)
+    
+    // Ensure all payload values are properly typed and not undefined
     const point = {
-      id: memoryId,
+      id: intId, // Use integer ID
       vector: embedding,
       payload: {
-        content: content.substring(0, 2000), // More content for better matching
-        tags: tags.slice(0, 10), // Limit tags
+        originalId: originalId, // Store original string ID for reference
+        content: String(content || '').substring(0, 2000), // Ensure string type
+        tags: (tags || []).slice(0, 10).map(tag => String(tag)), // Ensure array of strings
         timestamp: new Date().toISOString(),
-        memoryId: memoryId.includes('_chunk_') ? memoryId.split('_chunk_')[0] : memoryId,
-        walletId: walletId || 'unknown', // Add walletId for filtering
-        source: source || 'unknown' // Add source for filtering
+        memoryId: String(memoryId.includes('_chunk_') ? memoryId.split('_chunk_')[0] : memoryId),
+        walletId: String(walletId || 'unknown'), // Ensure string type
+        source: String(source || 'unknown'), // Ensure string type
+        chunkIndex: memoryId.includes('_chunk_') ? parseInt(memoryId.split('_chunk_')[1] || '0') : 0 // Add chunk index as number
       }
     }
     
     console.log(`📦 Point structure:`)
-    console.log(`  - ID: ${point.id}`)
+    console.log(`  - ID: ${point.id} (type: ${typeof point.id}) [converted from: "${originalId}"]`)
     console.log(`  - Vector length: ${point.vector.length}`)
+    console.log(`  - Vector type: ${typeof point.vector} (is array: ${Array.isArray(point.vector)})`)
     console.log(`  - Payload keys: ${Object.keys(point.payload)}`)
     console.log(`  - Content preview: "${point.payload.content.substring(0, 50)}..."`)
+    console.log(`  - Tags: ${JSON.stringify(point.payload.tags)}`)
     
     if (!client) {
       console.error('❌ Qdrant client not available')
       return false
     }
     
-    const result = await client.upsert('memories', {
+    // Log the exact request being sent
+    const requestPayload = {
       wait: true,
       points: [point]
-    })
+    }
+    console.log(`📤 Request payload:`, JSON.stringify(requestPayload, null, 2))
+    
+    const result = await client.upsert('memories', requestPayload)
     
     console.log(`✅ Embedding stored successfully for memory ${memoryId}:`, result)
     return true

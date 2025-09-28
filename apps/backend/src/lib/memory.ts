@@ -288,6 +288,8 @@ export async function retrieveRelevantMemories(
     const promptEmbedding = await generateEmbedding(userPrompt)
     
     console.log(`🔍 [MemoryService] Searching vector database...`)
+    console.log(`📋 [MemoryService] Search parameters: userId="${userId}", effectiveSource="${effectiveSource}", limit=${limit * 2}, threshold=${threshold}`)
+    
     const searchResults = await search(
       promptEmbedding,
       limit * 2, // Get more results to ensure we have enough after filtering
@@ -338,9 +340,23 @@ export async function retrieveRelevantMemories(
     const memoryChunks = new Map<string, string[]>()
     
     for (const result of chunkResults) {
-      const chunkId = String(result.id)
-      // Extract memory ID from chunk ID (format: memoryId_chunk_N)
-      const memoryId = chunkId.replace(/_chunk_\d+$/, '')
+      console.log(`🔍 Processing Qdrant result:`, {
+        id: result.id,
+        score: result.score,
+        payloadMemoryId: result.payload?.memoryId,
+        payloadOriginalId: result.payload?.originalId,
+        payloadWalletId: result.payload?.walletId,
+        payloadSource: result.payload?.source
+      })
+      
+      // Use memoryId from payload instead of extracting from integer ID
+      const memoryId = String(result.payload?.memoryId || '')
+      if (!memoryId) {
+        console.warn(`⚠️ Missing memoryId in payload for result ${result.id}`)
+        continue
+      }
+      
+      console.log(`📋 Extracted memoryId: "${memoryId}" from result ${result.id}`)
       
       // Track the best similarity score for each memory
       const currentScore = memoryScores.get(memoryId) || 0
@@ -360,6 +376,8 @@ export async function retrieveRelevantMemories(
 
     const memoryIds = Array.from(memoryScores.keys())
     console.log(`🔍 [MemoryService] Found ${memoryIds.length} matching memories`)
+    console.log(`📋 [MemoryService] Memory IDs extracted:`, memoryIds)
+    console.log(`📋 [MemoryService] Memory scores:`, Array.from(memoryScores.entries()))
 
     if (memoryIds.length === 0) {
       await recordAuditTrail({
@@ -376,6 +394,9 @@ export async function retrieveRelevantMemories(
     }
 
     // STEP 6: Retrieve the actual memories with their images
+    console.log(`📋 [MemoryService] Querying database for memoryIds:`, JSON.stringify(memoryIds))
+    console.log(`📋 [MemoryService] Sample memoryId type and value:`, typeof memoryIds[0], `"${memoryIds[0]}"`)
+    
     const retrievedMemories = await db.select({
       id: memories.id,
       prompt: memories.prompt,
@@ -392,9 +413,16 @@ export async function retrieveRelevantMemories(
       .leftJoin(memoryImages, eq(memories.id, memoryImages.memoryId))
       .where(inArray(memories.id, memoryIds))
 
+    console.log(`📋 [MemoryService] Database query returned ${retrievedMemories.length} rows`)
+    if (retrievedMemories.length > 0 && retrievedMemories[0]) {
+      console.log(`📋 [MemoryService] First retrieved memory ID:`, retrievedMemories[0].id)
+    }
+
     // STEP 7: Group memories with their images and add similarity scores
     const memoryMap = new Map()
     const accessedMemoryIds: string[] = [] // Track for background access updates
+
+    console.log(`📋 [MemoryService] Processing ${retrievedMemories.length} database rows...`)
 
     for (const row of retrievedMemories) {
       if (!memoryMap.has(row.id)) {
@@ -423,9 +451,13 @@ export async function retrieveRelevantMemories(
     }
 
     // STEP 8: Sort by similarity and limit results
+    console.log(`📋 [MemoryService] Memory map has ${memoryMap.size} entries`)
+    
     const result = Array.from(memoryMap.values())
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, limit)
+    
+    console.log(`📋 [MemoryService] Final result array length: ${result.length}`)
 
     // STEP 9: Access counts are tracked via audit trail (no need for separate tracking)
 

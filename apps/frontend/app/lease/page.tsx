@@ -358,14 +358,15 @@ function LeasePageContent() {
               {/* Access Specifier Selection */}
               <div className="mb-6">
                 <label className="block text-custom-primary-600 font-medium mb-2">Select Access Level</label>
+                <p className="text-sm text-gray-500 mb-2">Choose which memories this entity can access</p>
                 <select
                   value={selectedAccessSpecifier}
                   onChange={(e:any) => setSelectedAccessSpecifier(e.target.value)}
                   className="w-full p-3 border border-custom-primary-300 rounded-lg focus:ring-2 focus:ring-custom-primary-500 focus:border-transparent"
                 >
-                  <option value="global">Global Access</option>
-                  <option value="vscode-extension">VSCode Extension Only</option>
-                  <option value="web-extension">Web Extension Only</option>
+                  <option value="global">Global Access (All Memories)</option>
+                  <option value="chatgpt">ChatGPT Memories Only</option>
+                  <option value="claude">Claude Memories Only</option>
                 </select>
               </div>
 
