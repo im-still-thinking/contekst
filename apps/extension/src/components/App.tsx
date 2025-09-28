@@ -62,7 +62,7 @@ const App: React.FC = () => {
     const sessionId = `auth_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     
     // Create wallet window URL with session tracking
-    const walletUrl = `http://localhost:3001/wallet?sessionId=${sessionId}&origin=extension`;
+    const walletUrl = `https://contekst-frontend.vercel.app/wallet?sessionId=${sessionId}&origin=extension`;
     const walletWindow = window.open(walletUrl, '_blank', 'width=500,height=600,scrollbars=yes,resizable=yes');
     
     if (!walletWindow) {
@@ -84,7 +84,7 @@ const App: React.FC = () => {
     // Listen for messages from the wallet window
     const handleMessage = (event: MessageEvent) => {
       // Be more permissive with origin to handle localhost variations
-      const allowedOrigins = ['http://localhost:3001', 'http://127.0.0.1:3001'];
+      const allowedOrigins = ['http://localhost:3001', 'http://127.0.0.1:3001', 'https://contekst-frontend.vercel.app'];
       if (!allowedOrigins.includes(event.origin)) {
         return;
       }
