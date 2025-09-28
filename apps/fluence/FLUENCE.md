@@ -15,6 +15,26 @@
 
 ![Contekst Architecture](public/Mermaid%20Chart%20-%20Create%20complex%2C%20visual%20diagrams%20with%20text.%20A%20smarter%20way%20of%20creating%20diagrams.-2025-09-28-043405.svg)
 
+## 🌐 Deployment Details
+
+**VM Public IP:** `81.15.150.177`
+
+### Service Endpoints
+
+- **Backend API:** http://81.15.150.177/
+- **Qdrant Dashboard:** http://81.15.150.177:6333/dashboard
+- **MySQL Database:** `81.15.150.177:3306`
+- **Redis Cache:** `81.15.150.177:6379`
+
+### Port Configuration
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Backend API | 80 | Main application endpoint |
+| Qdrant | 6333 | Vector database and dashboard |
+| MySQL | 3306 | Relational database |
+| Redis | 6379 | In-memory cache |
+
 Here is a complete Terraform configuration to deploy your entire application stack. This setup uses Terraform to create the VM and then uses a remote provisioner to run the service deployment script, making the entire process a single command.
 
 ### Project Structure
