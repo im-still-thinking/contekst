@@ -250,7 +250,7 @@ function setInputValue(inputElement: HTMLElement, text: string): void {
 }
 
 // Backend API configuration
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://81.15.150.177';
 
 // Global variable to store captured images
 let capturedImages: { base64: string; filename: string; timestamp: number }[] = [];
